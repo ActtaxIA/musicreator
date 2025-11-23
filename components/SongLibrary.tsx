@@ -1261,64 +1261,117 @@ export default function SongLibrary({
 
                  {/* Grupo Derecho (Acciones Extra) */}
                  <div className="flex items-center gap-2 pl-2 border-l border-zinc-200 dark:border-white/10">
-                    {/* Cover Gen */}
-                    {needsCover(song) && (
+                    
+                    {/* MENÚ DE OPCIONES UNIFICADO (3 PUNTOS) */}
+                    <div className="relative">
                       <button
-                        onClick={async () => {
-                          const userId = (song as any).user_id;
-                          try {
-                            const response = await fetch('/api/generate-cover', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({
-                                songId: song.id,
-                                title: song.title,
-                                genre: song.genre,
-                                mood: song.mood || 'energetic',
-                                userId: userId,
-                              }),
-                            });
-                            const data = await response.json();
-                            if (data.success) {
-                              alert('✅ Cover generándose! Aparecerá en 10-30 segundos.');
-                              setTimeout(() => window.location.reload(), 3000);
-                            } else {
-                              alert('❌ Error: ' + data.error);
-                            }
-                          } catch (error) {
-                            alert('❌ Error generando cover');
-                          }
-                        }}
-                        className="p-2.5 rounded-lg bg-purple-50 dark:bg-purple-600/20 hover:bg-purple-100 dark:hover:bg-purple-600/30 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-500/30 transition-colors"
-                        title="Generar Cover con IA"
-                      >
-                        <Music className="w-5 h-5" />
-                      </button>
-                    )}
-
-                    {/* Editar */}
-                    {onEdit && (
-                      <button
-                        onClick={() => onEdit(song)}
+                        onClick={() => setOpenMenuId(openMenuId === song.id ? null : song.id)}
                         className="p-2.5 rounded-lg bg-zinc-50 dark:bg-white/5 hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-400 dark:text-gray-400 hover:text-zinc-900 dark:hover:text-white transition-colors border border-zinc-200 dark:border-white/5"
-                        title="Editar con IA"
                       >
-                        <Edit className="w-5 h-5" />
+                        <MoreVertical className="w-5 h-5" />
                       </button>
-                    )}
+                      
+                      {/* MENÚ DROPDOWN (COPIA EXACTA DEL GRID VIEW) */}
+                      {openMenuId === song.id && (
+                        <div className="absolute right-0 bottom-full mb-2 w-56 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-zinc-300 dark:border-white/10 overflow-hidden z-[100]">
+                          {/* Regenerar */}
+                          <button
+                            onClick={() => {
+                              onRegenerate(song);
+                              setOpenMenuId(null);
+                            }}
+                            className="w-full px-4 py-3 text-left text-zinc-800 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors flex items-center gap-2 font-medium"
+                          >
+                            <RefreshCw className="w-4 h-4 text-zinc-500 dark:text-white" />
+                            Regenerar similar
+                          </button>
+                          
+                          {/* Generar Cover */}
+                          {needsCover(song) && (
+                            <button
+                              onClick={async () => {
+                                setOpenMenuId(null);
+                                const userId = (song as any).user_id;
+                                try {
+                                  const response = await fetch('/api/generate-cover', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                      songId: song.id,
+                                      title: song.title,
+                                      genre: song.genre,
+                                      mood: song.mood || 'energetic',
+                                      userId: userId,
+                                    }),
+                                  });
+                                  const data = await response.json();
+                                  if (data.success) {
+                                    alert('✅ Cover generándose! Aparecerá en 10-30 segundos.');
+                                    setTimeout(() => window.location.reload(), 3000);
+                                  } else {
+                                    alert('❌ Error: ' + data.error);
+                                  }
+                                } catch (error) {
+                                  alert('❌ Error generando cover');
+                                }
+                              }}
+                              className="w-full px-4 py-3 text-left text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors flex items-center gap-2 font-medium"
+                            >
+                              <Music className="w-4 h-4" />
+                              Generar Cover
+                            </button>
+                          )}
 
-                    {/* Eliminar */}
-                    <button
-                      onClick={() => {
-                        if (confirm('¿Estás seguro de eliminar esta canción?')) {
-                          onDelete(song.id);
-                        }
-                      }}
-                      className="p-2.5 rounded-lg bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-500 dark:text-red-400 border border-red-200 dark:border-red-500/20 transition-colors"
-                      title="Eliminar"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
+                          {/* Opción Añadir a Canal (Solo Admin/Editor) */}
+                          {(userRole === 'admin' || userRole === 'editor') && userChannels.length > 0 && (
+                            <>
+                              <div className="border-t border-zinc-200 dark:border-white/10 my-1" />
+                              <div className="px-4 py-2 text-xs font-semibold text-zinc-500 dark:text-gray-500 uppercase">
+                                Añadir a Canal
+                              </div>
+                              {userChannels.map(channel => (
+                                <button
+                                  key={channel.id}
+                                  onClick={() => handleAddToChannel(song.id, channel.id)}
+                                  className="w-full px-4 py-2 text-left text-zinc-800 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors flex items-center gap-2 text-sm"
+                                >
+                                  <Radio className="w-3 h-3" />
+                                  {channel.name}
+                                </button>
+                              ))}
+                              <div className="border-t border-zinc-200 dark:border-white/10 my-1" />
+                            </>
+                          )}
+
+                          {/* Editar */}
+                          <button
+                            onClick={() => {
+                              if (onEdit) onEdit(song);
+                              setOpenMenuId(null);
+                            }}
+                            className="w-full px-4 py-3 text-left text-zinc-800 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors flex items-center gap-2"
+                          >
+                            <Edit className="w-4 h-4" />
+                            Editar
+                          </button>
+
+                          {/* Eliminar */}
+                          <button
+                            onClick={() => {
+                              if (confirm('¿Estás seguro de eliminar esta canción?')) {
+                                onDelete(song.id);
+                                setOpenMenuId(null);
+                              }
+                            }}
+                            className="w-full px-4 py-3 text-left text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Eliminar
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
                  </div>
               </div>
             </div>
