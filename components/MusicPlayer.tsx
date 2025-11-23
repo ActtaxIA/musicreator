@@ -740,20 +740,20 @@ export default function MusicPlayer({ songs, userId, onToggleFavorite }: Props) 
                   tabIndex={0}
                   className={`w-full grid grid-cols-[40px_30px_1fr_60px] md:grid-cols-[40px_30px_1fr_100px_100px_60px_60px_60px] gap-3 items-center p-3 rounded-lg transition-all text-left group border border-transparent cursor-pointer ${
                     index === currentSongIndex
-                      ? 'bg-white/5 text-white border-white/5'
-                      : 'text-zinc-400 hover:bg-white/[0.02] hover:text-zinc-200'
+                      ? 'bg-blue-50 dark:bg-white/5 text-blue-700 dark:text-white border-blue-100 dark:border-white/5 font-medium'
+                      : 'text-zinc-700 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-white/[0.02] hover:text-zinc-900 dark:hover:text-zinc-200'
                   }`}
                 >
                   {/* Index / Playing Icon */}
                   <div className="flex justify-center pointer-events-none">
                     {index === currentSongIndex && isPlaying ? (
                        <div className="flex items-end gap-[2px] h-3 w-3 pb-0.5">
-                          <div className="w-0.5 bg-cyan-400 animate-music-bar h-full" style={{animationDelay:'0s'}}/>
-                          <div className="w-0.5 bg-cyan-400 animate-music-bar h-2/3" style={{animationDelay:'0.2s'}}/>
-                          <div className="w-0.5 bg-cyan-400 animate-music-bar h-full" style={{animationDelay:'0.4s'}}/>
+                          <div className="w-0.5 bg-blue-500 dark:bg-cyan-400 animate-music-bar h-full" style={{animationDelay:'0s'}}/>
+                          <div className="w-0.5 bg-blue-500 dark:bg-cyan-400 animate-music-bar h-2/3" style={{animationDelay:'0.2s'}}/>
+                          <div className="w-0.5 bg-blue-500 dark:bg-cyan-400 animate-music-bar h-full" style={{animationDelay:'0.4s'}}/>
                        </div>
                     ) : (
-                       <span className="text-[10px] font-mono opacity-40 group-hover:hidden">{index + 1}</span>
+                       <span className="text-[10px] font-mono text-zinc-500 dark:text-zinc-500 group-hover:hidden">{index + 1}</span>
                     )}
                     <Play className={`w-3 h-3 hidden ${index !== currentSongIndex && 'group-hover:block opacity-70'}`} />
                   </div>
@@ -765,7 +765,7 @@ export default function MusicPlayer({ songs, userId, onToggleFavorite }: Props) 
                           e.stopPropagation();
                           onToggleFavorite(song.id);
                         }}
-                        className="text-zinc-600 hover:text-pink-500 transition-colors p-1 rounded-full hover:bg-white/5"
+                        className="text-zinc-400 dark:text-zinc-600 hover:text-pink-500 transition-colors p-1 rounded-full hover:bg-gray-200 dark:hover:bg-white/5"
                     >
                         <Heart className={`w-3.5 h-3.5 ${song.is_favorite ? 'fill-pink-500 text-pink-500' : ''}`} />
                     </button>
@@ -775,41 +775,41 @@ export default function MusicPlayer({ songs, userId, onToggleFavorite }: Props) 
                   <div className="flex items-center gap-3 overflow-hidden pointer-events-none">
                     <img 
                       src={song.image_url || '/placeholder-album.svg'} 
-                      className={`w-8 h-8 rounded object-cover shadow-sm ${index === currentSongIndex ? 'opacity-100 ring-1 ring-cyan-500/30' : 'opacity-60 group-hover:opacity-90 grayscale group-hover:grayscale-0 transition-all'}`}
+                      className={`w-8 h-8 rounded object-cover shadow-sm ${index === currentSongIndex ? 'opacity-100 ring-1 ring-blue-500/30 dark:ring-cyan-500/30' : 'opacity-90 group-hover:opacity-100 grayscale group-hover:grayscale-0 transition-all'}`}
                       alt=""
                     />
                     <div className="flex flex-col min-w-0">
-                      <span className={`truncate font-medium text-xs ${index === currentSongIndex ? 'text-cyan-400' : ''}`}>
+                      <span className={`truncate font-bold text-xs ${index === currentSongIndex ? 'text-blue-600 dark:text-cyan-400' : 'text-zinc-800 dark:text-white'}`}>
                         {song.title}
                       </span>
-                      <span className="truncate text-[9px] opacity-50 md:hidden">
+                      <span className="truncate text-[9px] text-zinc-500 dark:text-zinc-500 md:hidden">
                         {song.genre} • {song.mood || '-'}
                       </span>
                     </div>
                   </div>
 
                   {/* Mood (Desktop) */}
-                  <div className="truncate text-[10px] uppercase tracking-wide opacity-50 hidden md:block pointer-events-none">
+                  <div className="truncate text-[10px] uppercase tracking-wide text-zinc-600 dark:text-zinc-500 hidden md:block pointer-events-none font-medium">
                     {song.mood || '-'}
                   </div>
 
                   {/* Género (Desktop) */}
-                  <div className="truncate text-[10px] uppercase tracking-wide opacity-50 font-medium hidden md:block pointer-events-none">
+                  <div className="truncate text-[10px] uppercase tracking-wide text-zinc-600 dark:text-zinc-500 font-bold hidden md:block pointer-events-none">
                     {song.genre}
                   </div>
 
                   {/* BPM (Desktop) */}
-                  <div className="truncate text-[10px] font-mono opacity-50 text-center hidden md:block pointer-events-none">
+                  <div className="truncate text-[10px] font-mono text-zinc-500 dark:text-zinc-500 text-center hidden md:block pointer-events-none">
                     {bpm}
                   </div>
 
                   {/* Idioma (Desktop) */}
-                  <div className="truncate text-[10px] uppercase tracking-wide opacity-50 text-center hidden md:block pointer-events-none">
+                  <div className="truncate text-[10px] uppercase tracking-wide text-zinc-500 dark:text-zinc-500 text-center hidden md:block pointer-events-none">
                     {languageMap[song.language || ''] || (song.language?.substring(0, 3) || '-')}
                   </div>
 
                   {/* Duración */}
-                  <div className="text-right text-[10px] font-mono opacity-50 pointer-events-none">
+                  <div className="text-right text-[10px] font-mono text-zinc-500 dark:text-zinc-500 pointer-events-none">
                     {formatTime(song.duration)}
                   </div>
                 </div>
