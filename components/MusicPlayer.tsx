@@ -21,7 +21,9 @@ import {
   Heart,
   Search,
   Globe,
-  Radio
+  Radio,
+  X,
+  Trash2
 } from 'lucide-react';
 
 type SortKey = 'title' | 'mood' | 'genre' | 'bpm' | 'language' | 'duration';
@@ -29,10 +31,11 @@ type SortKey = 'title' | 'mood' | 'genre' | 'bpm' | 'language' | 'duration';
 interface Props {
   songs: Song[];
   userId?: string;
+  userRole?: string;
   onToggleFavorite: (songId: string) => void;
 }
 
-export default function MusicPlayer({ songs, userId, onToggleFavorite }: Props) {
+export default function MusicPlayer({ songs, userId, userRole, onToggleFavorite }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const queueItemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [currentSongIndex, setCurrentSongIndex] = useState(0);
@@ -63,6 +66,30 @@ export default function MusicPlayer({ songs, userId, onToggleFavorite }: Props) 
     };
     fetchChannels();
   }, []);
+
+  const handleDeleteChannel = async (channelId: string) => {
+    if (!confirm('¿Estás seguro de eliminar este canal?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('channels')
+        .update({ is_active: false }) // Soft delete
+        .eq('id', channelId);
+
+      if (error) throw error;
+
+      // Actualizar estado local
+      setChannels(channels.filter(c => c.id !== channelId));
+      if (activeChannelId === channelId) {
+        setActiveChannelId(null);
+        setSelectedGenre('all');
+        setSearchQuery('');
+      }
+    } catch (error) {
+      console.error('Error deleting channel:', error);
+      alert('Error al eliminar el canal');
+    }
+  };
 
   const handleSelectChannel = (channel: Channel) => {
     if (activeChannelId === channel.id) {
@@ -666,21 +693,36 @@ export default function MusicPlayer({ songs, userId, onToggleFavorite }: Props) 
           
           {/* CANALES (Playlists Curadas) */}
           {channels.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto pb-1 shrink-0 custom-scrollbar">
+            <div className="flex gap-2 overflow-x-auto pb-2 shrink-0 custom-scrollbar px-1">
               {channels.map(channel => (
-                <button
-                  key={channel.id}
-                  onClick={() => handleSelectChannel(channel)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap transition-all border ${
-                    activeChannelId === channel.id
-                      ? 'bg-blue-600 text-white border-blue-600 shadow-md'
-                      : 'bg-white dark:bg-[#18181b] text-zinc-600 dark:text-zinc-400 border-zinc-300 dark:border-white/10 hover:border-blue-500 hover:text-blue-600 dark:hover:text-white'
-                  }`}
-                  title={channel.description}
-                >
-                  <Radio className="w-3 h-3" />
-                  {channel.name}
-                </button>
+                <div key={channel.id} className="relative group/channel shrink-0">
+                  <button
+                    onClick={() => handleSelectChannel(channel)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap transition-all border ${
+                      activeChannelId === channel.id
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                        : 'bg-white dark:bg-[#18181b] text-zinc-600 dark:text-zinc-400 border-zinc-300 dark:border-white/10 hover:border-blue-500 hover:text-blue-600 dark:hover:text-white'
+                    }`}
+                    title={channel.description}
+                  >
+                    <Radio className="w-3 h-3" />
+                    {channel.name}
+                  </button>
+                  
+                  {/* Botón de eliminar (Admin/Editor) */}
+                  {(userRole === 'admin' || userRole === 'editor') && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteChannel(channel.id);
+                      }}
+                      className="absolute -top-1.5 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover/channel:opacity-100 transition-opacity shadow-sm hover:bg-red-600 hover:scale-110 z-10"
+                      title="Eliminar canal"
+                    >
+                      <X className="w-2 h-2" />
+                    </button>
+                  )}
+                </div>
               ))}
             </div>
           )}

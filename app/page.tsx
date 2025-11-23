@@ -374,6 +374,7 @@ export default function MainApp() {
         {activeTab === 'player' && (
           <MusicPlayer
             songs={songsWithFavorites}
+            userRole={userProfile?.role}
             onToggleFavorite={handleToggleFavorite}
           />
         )}

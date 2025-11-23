@@ -1095,7 +1095,7 @@ export default function SongLibrary({
           {paginatedSongs.map((song) => (
             <div
               key={song.id}
-              className="bg-gradient-to-r from-white/10 to-white/5 backdrop-blur-lg rounded-xl p-4 transition-all border border-white/10 hover:border-white/20 flex flex-col sm:flex-row gap-4 sm:items-center group"
+              className="bg-white dark:bg-white/5 border border-zinc-200 dark:border-white/10 rounded-xl p-4 transition-all hover:border-blue-500 dark:hover:border-white/20 flex flex-col sm:flex-row gap-4 sm:items-center group shadow-sm hover:shadow-md"
             >
               {/* SECCIÓN PRINCIPAL: Play + Info */}
               <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -1113,7 +1113,7 @@ export default function SongLibrary({
                 </button>
 
                 {/* Portada */}
-                <div className="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center overflow-hidden shadow-inner border border-white/5">
+                <div className="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-lg bg-zinc-100 dark:bg-white/5 flex items-center justify-center overflow-hidden shadow-inner border border-zinc-200 dark:border-white/5">
                   {song.image_url && !needsCover(song) ? (
                     <img 
                       src={song.image_url} 
@@ -1125,14 +1125,14 @@ export default function SongLibrary({
                       }}
                     />
                   ) : (
-                    <Music className="w-6 h-6 sm:w-8 sm:h-8 text-white/30" />
+                    <Music className="w-6 h-6 sm:w-8 sm:h-8 text-zinc-300 dark:text-white/30" />
                   )}
                 </div>
 
                 {/* Información de Texto */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-bold text-white text-base sm:text-lg truncate leading-tight">
+                    <h3 className="font-bold text-zinc-900 dark:text-white text-base sm:text-lg truncate leading-tight">
                       {song.title}
                     </h3>
                     {song.is_favorite && (
@@ -1141,8 +1141,8 @@ export default function SongLibrary({
                   </div>
                   
                   {/* Metadata compacta */}
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm text-gray-400">
-                     <span className="bg-white/5 px-2 py-0.5 rounded text-purple-300 font-medium border border-white/5">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">
+                     <span className="bg-purple-50 dark:bg-white/5 px-2 py-0.5 rounded text-purple-600 dark:text-purple-300 font-medium border border-purple-100 dark:border-white/5">
                        {song.genre}
                      </span>
                      <div className="flex items-center gap-1">
@@ -1151,7 +1151,7 @@ export default function SongLibrary({
                      </div>
                      {/* Barra de progreso desktop */}
                      {currentlyPlaying === song.id && duration > 0 && (
-                        <span className="hidden sm:inline text-purple-400 font-mono">
+                        <span className="hidden sm:inline text-purple-600 dark:text-purple-400 font-mono">
                            {formatDuration(currentTime)}
                         </span>
                      )}
@@ -1162,13 +1162,13 @@ export default function SongLibrary({
               {/* Barra de progreso (Móvil - Debajo de la info) */}
               {currentlyPlaying === song.id && (
                 <div className="w-full sm:hidden px-1">
-                   <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                   <div className="h-1.5 bg-zinc-200 dark:bg-white/10 rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-purple-500 animate-pulse" 
                         style={{ width: duration > 0 && isFinite(duration) ? `${(currentTime / duration) * 100}%` : '0%' }}
                       />
                    </div>
-                   <div className="flex justify-between text-[10px] text-gray-500 mt-1 font-mono">
+                   <div className="flex justify-between text-[10px] text-zinc-500 dark:text-zinc-500 mt-1 font-mono">
                       <span>{formatDuration(currentTime)}</span>
                       <span>{formatDuration(duration)}</span>
                    </div>
@@ -1176,14 +1176,14 @@ export default function SongLibrary({
               )}
 
               {/* SECCIÓN BOTONES: Debajo en móvil / Derecha en desktop */}
-              <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2 pt-3 sm:pt-0 border-t border-white/5 sm:border-0 mt-1 sm:mt-0">
+              <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2 pt-3 sm:pt-0 border-t border-zinc-100 dark:border-white/5 sm:border-0 mt-1 sm:mt-0">
                  
                  {/* Grupo Izquierdo (Móvil) / Principal */}
                  <div className="flex items-center gap-2">
                     {/* Favorito */}
                     <button
                       onClick={() => onToggleFavorite(song.id)}
-                      className={`p-2.5 rounded-lg transition-colors border border-white/5 ${song.is_favorite ? 'bg-pink-500/10 text-pink-500 border-pink-500/20' : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'}`}
+                      className={`p-2.5 rounded-lg transition-colors border ${song.is_favorite ? 'bg-pink-50 dark:bg-pink-500/10 text-pink-600 dark:text-pink-500 border-pink-200 dark:border-pink-500/20' : 'bg-zinc-50 dark:bg-white/5 text-zinc-400 dark:text-gray-400 border-zinc-200 dark:border-white/5 hover:bg-zinc-100 dark:hover:bg-white/10 hover:text-zinc-900 dark:hover:text-white'}`}
                       title={song.is_favorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
                     >
                       <Heart className={`w-5 h-5 ${song.is_favorite ? 'fill-current' : ''}`} />
@@ -1193,7 +1193,7 @@ export default function SongLibrary({
                     {song.audio_url && (
                       <button
                         onClick={() => handleDownload(song.audio_url!, song.title)}
-                        className="p-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors border border-white/5"
+                        className="p-2.5 rounded-lg bg-zinc-50 dark:bg-white/5 hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-400 dark:text-gray-400 hover:text-zinc-900 dark:hover:text-white transition-colors border border-zinc-200 dark:border-white/5"
                         title="Descargar MP3"
                       >
                         <Download className="w-5 h-5" />
@@ -1203,7 +1203,7 @@ export default function SongLibrary({
                     {/* Regenerar */}
                     <button
                       onClick={() => onRegenerate(song)}
-                      className="p-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors border border-white/5"
+                      className="p-2.5 rounded-lg bg-zinc-50 dark:bg-white/5 hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-400 dark:text-gray-400 hover:text-zinc-900 dark:hover:text-white transition-colors border border-zinc-200 dark:border-white/5"
                       title="Regenerar similar"
                     >
                       <RefreshCw className="w-5 h-5" />
@@ -1211,7 +1211,7 @@ export default function SongLibrary({
                  </div>
 
                  {/* Grupo Derecho (Acciones Extra) */}
-                 <div className="flex items-center gap-2 pl-2 border-l border-white/10">
+                 <div className="flex items-center gap-2 pl-2 border-l border-zinc-200 dark:border-white/10">
                     {/* Cover Gen */}
                     {needsCover(song) && (
                       <button
@@ -1240,7 +1240,7 @@ export default function SongLibrary({
                             alert('❌ Error generando cover');
                           }
                         }}
-                        className="p-2.5 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 border border-purple-500/30 transition-colors"
+                        className="p-2.5 rounded-lg bg-purple-50 dark:bg-purple-600/20 hover:bg-purple-100 dark:hover:bg-purple-600/30 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-500/30 transition-colors"
                         title="Generar Cover con IA"
                       >
                         <Music className="w-5 h-5" />
@@ -1251,7 +1251,7 @@ export default function SongLibrary({
                     {onEdit && (
                       <button
                         onClick={() => onEdit(song)}
-                        className="p-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors border border-white/5"
+                        className="p-2.5 rounded-lg bg-zinc-50 dark:bg-white/5 hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-400 dark:text-gray-400 hover:text-zinc-900 dark:hover:text-white transition-colors border border-zinc-200 dark:border-white/5"
                         title="Editar con IA"
                       >
                         <Edit className="w-5 h-5" />
@@ -1265,7 +1265,7 @@ export default function SongLibrary({
                           onDelete(song.id);
                         }
                       }}
-                      className="p-2.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-colors"
+                      className="p-2.5 rounded-lg bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-500 dark:text-red-400 border border-red-200 dark:border-red-500/20 transition-colors"
                       title="Eliminar"
                     >
                       <Trash2 className="w-5 h-5" />
