@@ -394,6 +394,82 @@ export default function MusicPlayer({ songs, userId, userRole, onToggleFavorite 
     };
   }, [handleNext]); // Incluir handleNext en dependencias
 
+  // Media Session API - Controles en pantalla de bloqueo y notificaciones
+  useEffect(() => {
+    if ('mediaSession' in navigator && currentSong) {
+      const audio = audioRef.current;
+      if (!audio) return;
+
+      // Actualizar metadata
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: currentSong.title,
+        artist: currentSong.genre || 'Narciso Music Generator',
+        album: currentSong.mood || 'Generated Music',
+        artwork: currentSong.image_url ? [
+          { src: currentSong.image_url, sizes: '512x512', type: 'image/jpeg' }
+        ] : []
+      });
+
+      // Configurar action handlers
+      navigator.mediaSession.setActionHandler('play', () => {
+        setIsPlaying(true);
+      });
+
+      navigator.mediaSession.setActionHandler('pause', () => {
+        setIsPlaying(false);
+      });
+
+      navigator.mediaSession.setActionHandler('previoustrack', () => {
+        handlePrevious();
+      });
+
+      navigator.mediaSession.setActionHandler('nexttrack', () => {
+        handleNext();
+      });
+
+      navigator.mediaSession.setActionHandler('seekbackward', (details) => {
+        const skipTime = details.seekOffset || 10;
+        audio.currentTime = Math.max(audio.currentTime - skipTime, 0);
+      });
+
+      navigator.mediaSession.setActionHandler('seekforward', (details) => {
+        const skipTime = details.seekOffset || 10;
+        audio.currentTime = Math.min(audio.currentTime + skipTime, audio.duration);
+      });
+
+      // Actualizar posición (para la barra de progreso del sistema)
+      const updatePositionState = () => {
+        if ('setPositionState' in navigator.mediaSession && audio.duration && isFinite(audio.duration)) {
+          try {
+            navigator.mediaSession.setPositionState({
+              duration: audio.duration,
+              playbackRate: audio.playbackRate,
+              position: audio.currentTime
+            });
+          } catch (error) {
+            console.log('Error updating position state:', error);
+          }
+        }
+      };
+
+      // Actualizar posición cada segundo
+      const positionInterval = setInterval(updatePositionState, 1000);
+
+      return () => {
+        clearInterval(positionInterval);
+        // Limpiar handlers al desmontar
+        if ('mediaSession' in navigator) {
+          navigator.mediaSession.setActionHandler('play', null);
+          navigator.mediaSession.setActionHandler('pause', null);
+          navigator.mediaSession.setActionHandler('previoustrack', null);
+          navigator.mediaSession.setActionHandler('nexttrack', null);
+          navigator.mediaSession.setActionHandler('seekbackward', null);
+          navigator.mediaSession.setActionHandler('seekforward', null);
+        }
+      };
+    }
+  }, [currentSong, isPlaying, handleNext, handlePrevious]);
+
   const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
     const audio = audioRef.current;
     if (!audio || !duration) return;
