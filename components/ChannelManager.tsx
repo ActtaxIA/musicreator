@@ -30,6 +30,12 @@ export default function ChannelManager({ userRole }: Props) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newChannelName, setNewChannelName] = useState('');
   const [newChannelDesc, setNewChannelDesc] = useState('');
+  
+  // Modal para añadir canciones
+  const [isAddSongModalOpen, setIsAddSongModalOpen] = useState(false);
+  const [allSongs, setAllSongs] = useState<Song[]>([]);
+  const [searchSongQuery, setSearchSongQuery] = useState('');
+  const [isLoadingSongs, setIsLoadingSongs] = useState(false);
 
   useEffect(() => {
     fetchChannels();
@@ -114,6 +120,51 @@ export default function ChannelManager({ userRole }: Props) {
     }
   };
 
+  // Función para abrir modal y cargar todas las canciones
+  const handleOpenAddSongModal = async () => {
+    setIsAddSongModalOpen(true);
+    setIsLoadingSongs(true);
+    
+    const { data, error } = await supabase
+      .from('songs')
+      .select('*')
+      .eq('status', 'complete')
+      .order('created_at', { ascending: false });
+    
+    if (data) setAllSongs(data);
+    setIsLoadingSongs(false);
+  };
+
+  // Función para añadir canción al canal actual
+  const handleAddSongToChannel = async (songId: string) => {
+    if (!selectedChannel) return;
+
+    const { error } = await supabase
+      .from('channel_songs')
+      .insert({
+        channel_id: selectedChannel.id,
+        song_id: songId
+      });
+
+    if (error) {
+      if (error.code === '23505') {
+        alert('⚠️ Esta canción ya está en el canal');
+      } else {
+        alert('❌ Error al añadir canción');
+      }
+    } else {
+      alert('✅ Canción añadida');
+      // Recargar canciones del canal
+      fetchChannelSongs(selectedChannel.id);
+    }
+  };
+
+  // Filtrar canciones disponibles por búsqueda
+  const filteredAvailableSongs = allSongs.filter(song => 
+    song.title.toLowerCase().includes(searchSongQuery.toLowerCase()) ||
+    song.genre.toLowerCase().includes(searchSongQuery.toLowerCase())
+  );
+
   return (
     <div className="space-y-6 h-[calc(100vh-140px)] flex flex-col md:flex-row gap-6">
       
@@ -196,8 +247,18 @@ export default function ChannelManager({ userRole }: Props) {
                     {selectedChannel.description || 'Sin descripción'}
                   </p>
                 </div>
-                <div className="text-sm text-zinc-500">
-                  {channelSongs.length} canciones
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleOpenAddSongModal}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2 shadow-md"
+                    title="Añadir canciones"
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span className="hidden sm:inline">Añadir</span>
+                  </button>
+                  <div className="text-sm text-zinc-500">
+                    {channelSongs.length} canciones
+                  </div>
                 </div>
               </div>
             </div>
@@ -299,6 +360,91 @@ export default function ChannelManager({ userRole }: Props) {
               >
                 Crear Canal
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Modal Añadir Canciones */}
+      {isAddSongModalOpen && selectedChannel && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-xl w-full max-w-3xl h-[80vh] shadow-xl flex flex-col overflow-hidden">
+            <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-zinc-900 dark:text-white">
+                  Añadir a "{selectedChannel.name}"
+                </h3>
+                <button
+                  onClick={() => {
+                    setIsAddSongModalOpen(false);
+                    setSearchSongQuery('');
+                  }}
+                  className="p-2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              {/* Barra de búsqueda */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400" />
+                <input
+                  type="text"
+                  value={searchSongQuery}
+                  onChange={(e) => setSearchSongQuery(e.target.value)}
+                  placeholder="Buscar por título o género..."
+                  className="w-full pl-10 pr-4 py-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4">
+              {isLoadingSongs ? (
+                <div className="text-center py-12 text-zinc-500">Cargando canciones...</div>
+              ) : filteredAvailableSongs.length === 0 ? (
+                <div className="text-center py-12 text-zinc-500">
+                  <Music className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p>No se encontraron canciones</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {filteredAvailableSongs.map(song => (
+                    <div 
+                      key={song.id}
+                      className="flex items-center gap-4 p-3 bg-zinc-50 dark:bg-zinc-800/30 rounded-lg border border-zinc-100 dark:border-zinc-800 hover:border-blue-300 dark:hover:border-blue-700 transition-colors group"
+                    >
+                      <div className="w-12 h-12 rounded bg-zinc-200 dark:bg-zinc-700 overflow-hidden flex-shrink-0">
+                        {song.image_url ? (
+                          <img src={song.image_url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <Music className="w-full h-full p-2 text-zinc-400" />
+                        )}
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-zinc-900 dark:text-white truncate">
+                          {song.title}
+                        </h4>
+                        <div className="flex gap-2 text-xs text-zinc-500">
+                          <span className="bg-zinc-200 dark:bg-zinc-700 px-2 py-0.5 rounded">
+                            {song.genre}
+                          </span>
+                          <span>{Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, '0')}</span>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => handleAddSongToChannel(song.id)}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors opacity-0 group-hover:opacity-100 flex items-center gap-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Añadir
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

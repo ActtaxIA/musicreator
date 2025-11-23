@@ -58,11 +58,8 @@ export default function SongLibrary({
   const [itemsPerPage] = useState(60);
   const [isGeneratingCovers, setIsGeneratingCovers] = useState(false);
   
-  // Estado para creación de canales
-  const [isChannelModalOpen, setIsChannelModalOpen] = useState(false);
-  const [newChannelName, setNewChannelName] = useState('');
-  const [isCreatingChannel, setIsCreatingChannel] = useState(false);
-  const [userChannels, setUserChannels] = useState<any[]>([]); // Lista de canales para el menú contextual
+  // Estado para gestión de canales (solo para añadir canciones)
+  const [userChannels, setUserChannels] = useState<any[]>([]);
   
   const audioRef = useRef<HTMLAudioElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
@@ -77,37 +74,6 @@ export default function SongLibrary({
       fetchChannels();
     }
   }, [userRole]);
-
-  // Función para crear canal vacío (Manual)
-  const handleCreateChannel = async () => {
-    if (!newChannelName.trim()) return;
-    
-    setIsCreatingChannel(true);
-    try {
-      // Canal manual no tiene filtros predefinidos
-      const { data, error } = await supabase
-        .from('channels')
-        .insert({
-          name: newChannelName,
-          filters: {}, // Filtros vacíos = canal manual
-          is_active: true
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      alert('✅ Canal creado exitosamente');
-      setIsChannelModalOpen(false);
-      setNewChannelName('');
-      setUserChannels(prev => [...prev, data]); // Actualizar lista local
-    } catch (error) {
-      console.error('Error creating channel:', error);
-      alert('Error al crear el canal');
-    } finally {
-      setIsCreatingChannel(false);
-    }
-  };
 
   // Función para añadir canción a canal
   const handleAddToChannel = async (songId: string, channelId: string) => {
@@ -653,17 +619,6 @@ export default function SongLibrary({
             )}
           </button>
 
-          {/* Botón para crear Canal (Admin/Editor) */}
-          {(userRole === 'admin' || userRole === 'editor') && (
-            <button
-              onClick={() => setIsChannelModalOpen(true)}
-              className="px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2 border bg-gray-50 dark:bg-white/5 text-zinc-600 dark:text-gray-300 border-zinc-300 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 hover:border-zinc-400"
-              title="Crear un nuevo canal vacío"
-            >
-              <Save className="w-5 h-5" />
-              Crear Canal
-            </button>
-          )}
         </div>
 
         {/* Filtros */}
@@ -703,59 +658,6 @@ export default function SongLibrary({
           </div>
         </div>
       </div>
-
-      {/* Channel Creation Modal */}
-      {isChannelModalOpen && (
-        <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-xl w-full max-w-md overflow-hidden shadow-2xl border border-zinc-200 dark:border-zinc-700">
-            <div className="p-6">
-              <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-4">Crear Canal</h3>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
-                Crea un nuevo canal vacío. Podrás añadir canciones manualmente desde el menú de opciones de cada canción.
-              </p>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Nombre del Canal</label>
-                  <input
-                    type="text"
-                    value={newChannelName}
-                    onChange={(e) => setNewChannelName(e.target.value)}
-                    placeholder="Ej: Top Hits Verano, Selección Chill..."
-                    className="w-full px-4 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
-              </div>
-              
-              <div className="flex gap-3 mt-8 justify-end">
-                <button
-                  onClick={() => setIsChannelModalOpen(false)}
-                  className="px-4 py-2 rounded-lg bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleCreateChannel}
-                  disabled={!newChannelName.trim() || isCreatingChannel}
-                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  {isCreatingChannel ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      Creando...
-                    </>
-                  ) : (
-                    <>
-                      <Radio className="w-4 h-4" />
-                      Crear Canal
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Resultados y Toggle de Vista */}
       <div className="flex items-center justify-between">
@@ -1225,9 +1127,9 @@ export default function SongLibrary({
               )}
 
               {/* SECCIÓN BOTONES: Debajo en móvil / Derecha en desktop */}
-              <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2 pt-3 sm:pt-0 border-t border-zinc-100 dark:border-white/5 sm:border-0 mt-1 sm:mt-0">
+              <div className="flex items-center justify-end w-full sm:w-auto gap-2 pt-3 sm:pt-0 border-t border-zinc-100 dark:border-white/5 sm:border-0 mt-1 sm:mt-0">
                  
-                 {/* Grupo Izquierdo (Móvil) / Principal */}
+                 {/* BOTONES PRINCIPALES (más accesibles) */}
                  <div className="flex items-center gap-2">
                     {/* Favorito */}
                     <button
@@ -1248,42 +1150,31 @@ export default function SongLibrary({
                         <Download className="w-5 h-5" />
                       </button>
                     )}
-
-                    {/* Regenerar */}
-                    <button
-                      onClick={() => onRegenerate(song)}
-                      className="p-2.5 rounded-lg bg-zinc-50 dark:bg-white/5 hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-400 dark:text-gray-400 hover:text-zinc-900 dark:hover:text-white transition-colors border border-zinc-200 dark:border-white/5"
-                      title="Regenerar similar"
-                    >
-                      <RefreshCw className="w-5 h-5" />
-                    </button>
                  </div>
 
-                 {/* Grupo Derecho (Acciones Extra) */}
-                 <div className="flex items-center gap-2 pl-2 border-l border-zinc-200 dark:border-white/10">
-                    
-                    {/* MENÚ DE OPCIONES UNIFICADO (3 PUNTOS) */}
-                    <div className="relative">
-                      <button
-                        onClick={() => setOpenMenuId(openMenuId === song.id ? null : song.id)}
-                        className="p-2.5 rounded-lg bg-zinc-50 dark:bg-white/5 hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-400 dark:text-gray-400 hover:text-zinc-900 dark:hover:text-white transition-colors border border-zinc-200 dark:border-white/5"
-                      >
-                        <MoreVertical className="w-5 h-5" />
-                      </button>
+                 {/* MENÚ DE OPCIONES (3 puntos) - MÁS GRANDE Y VISIBLE */}
+                 <div className="relative">
+                    <button
+                      onClick={() => setOpenMenuId(openMenuId === song.id ? null : song.id)}
+                      className="p-3 rounded-lg bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border-2 border-blue-200 dark:border-blue-500/30 transition-all hover:scale-105 shadow-sm"
+                      title="Más opciones"
+                    >
+                      <MoreVertical className="w-6 h-6" />
+                    </button>
                       
                       {/* MENÚ DROPDOWN (COPIA EXACTA DEL GRID VIEW) */}
                       {openMenuId === song.id && (
-                        <div className="absolute right-0 bottom-full mb-2 w-56 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-zinc-300 dark:border-white/10 overflow-hidden z-[100]">
+                        <div className="absolute right-0 bottom-full mb-2 w-64 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border-2 border-blue-200 dark:border-blue-700 overflow-hidden z-[100]">
                           {/* Regenerar */}
                           <button
                             onClick={() => {
                               onRegenerate(song);
                               setOpenMenuId(null);
                             }}
-                            className="w-full px-4 py-3 text-left text-zinc-800 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors flex items-center gap-2 font-medium"
+                            className="w-full px-5 py-3 text-left text-zinc-800 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors flex items-center gap-3 font-medium border-b border-zinc-100 dark:border-white/5"
                           >
-                            <RefreshCw className="w-4 h-4 text-zinc-500 dark:text-white" />
-                            Regenerar similar
+                            <RefreshCw className="w-5 h-5 text-blue-500" />
+                            <span>Regenerar similar</span>
                           </button>
                           
                           {/* Generar Cover */}
@@ -1315,31 +1206,29 @@ export default function SongLibrary({
                                   alert('❌ Error generando cover');
                                 }
                               }}
-                              className="w-full px-4 py-3 text-left text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors flex items-center gap-2 font-medium"
+                              className="w-full px-5 py-3 text-left text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors flex items-center gap-3 font-medium border-b border-zinc-100 dark:border-white/5"
                             >
-                              <Music className="w-4 h-4" />
-                              Generar Cover
+                              <Music className="w-5 h-5" />
+                              <span>Generar Cover</span>
                             </button>
                           )}
 
                           {/* Opción Añadir a Canal (Solo Admin/Editor) */}
                           {(userRole === 'admin' || userRole === 'editor') && userChannels.length > 0 && (
                             <>
-                              <div className="border-t border-zinc-200 dark:border-white/10 my-1" />
-                              <div className="px-4 py-2 text-xs font-semibold text-zinc-500 dark:text-gray-500 uppercase">
-                                Añadir a Canal
+                              <div className="px-5 py-2 text-xs font-bold text-zinc-500 dark:text-gray-400 uppercase bg-zinc-50 dark:bg-white/5 border-b border-zinc-100 dark:border-white/5">
+                                📻 Añadir a Canal
                               </div>
                               {userChannels.map(channel => (
                                 <button
                                   key={channel.id}
                                   onClick={() => handleAddToChannel(song.id, channel.id)}
-                                  className="w-full px-4 py-2 text-left text-zinc-800 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors flex items-center gap-2 text-sm"
+                                  className="w-full px-5 py-3 text-left text-zinc-800 dark:text-white hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors flex items-center gap-3 border-b border-zinc-100 dark:border-white/5"
                                 >
-                                  <Radio className="w-3 h-3" />
-                                  {channel.name}
+                                  <Radio className="w-4 h-4 text-blue-500" />
+                                  <span className="font-medium">{channel.name}</span>
                                 </button>
                               ))}
-                              <div className="border-t border-zinc-200 dark:border-white/10 my-1" />
                             </>
                           )}
 
@@ -1349,10 +1238,10 @@ export default function SongLibrary({
                               if (onEdit) onEdit(song);
                               setOpenMenuId(null);
                             }}
-                            className="w-full px-4 py-3 text-left text-zinc-800 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors flex items-center gap-2"
+                            className="w-full px-5 py-3 text-left text-zinc-800 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors flex items-center gap-3 border-b border-zinc-100 dark:border-white/5"
                           >
-                            <Edit className="w-4 h-4" />
-                            Editar
+                            <Edit className="w-5 h-5 text-amber-500" />
+                            <span>Editar</span>
                           </button>
 
                           {/* Eliminar */}
@@ -1363,10 +1252,10 @@ export default function SongLibrary({
                                 setOpenMenuId(null);
                               }
                             }}
-                            className="w-full px-4 py-3 text-left text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2"
+                            className="w-full px-5 py-3 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-3 font-medium"
                           >
-                            <Trash2 className="w-4 h-4" />
-                            Eliminar
+                            <Trash2 className="w-5 h-5" />
+                            <span>Eliminar</span>
                           </button>
                         </div>
                       )}
