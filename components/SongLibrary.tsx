@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, memo, useCallback } from 'react';
 import { Song, supabase } from '@/lib/supabase';
+import { UserRole } from '@/types';
 import { 
   Play, 
   Pause, 
@@ -17,11 +18,14 @@ import {
   RefreshCw,
   Edit,
   Grid3x3,
-  List
+  List,
+  Radio,
+  Save
 } from 'lucide-react';
 
 interface Props {
   songs: Song[];
+  userRole?: string;
   onToggleFavorite: (songId: string) => void;
   onDelete: (songId: string) => void;
   onRegenerate: (song: Song) => void;
@@ -31,6 +35,7 @@ interface Props {
 
 export default function SongLibrary({ 
   songs, 
+  userRole,
   onToggleFavorite, 
   onDelete, 
   onRegenerate,
@@ -41,9 +46,9 @@ export default function SongLibrary({
   const [selectedGenre, setSelectedGenre] = useState('all');
   const [sortBy, setSortBy] = useState<'recent' | 'oldest' | 'duration' | 'plays'>('recent');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
-  const [showNoCover, setShowNoCover] = useState(false); // NUEVO: Filtro para canciones sin cover
+  const [showNoCover, setShowNoCover] = useState(false);
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
-  const [isAudioPlaying, setIsAudioPlaying] = useState(false); // NUEVO: Estado real de reproducción
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -51,10 +56,48 @@ export default function SongLibrary({
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(60);
-  const [isGeneratingCovers, setIsGeneratingCovers] = useState(false); // NUEVO: Estado para generación masiva
+  const [isGeneratingCovers, setIsGeneratingCovers] = useState(false);
+  
+  // Estado para creación de canales
+  const [isChannelModalOpen, setIsChannelModalOpen] = useState(false);
+  const [newChannelName, setNewChannelName] = useState('');
+  const [isCreatingChannel, setIsCreatingChannel] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
+
+  // Función para crear canal desde filtros actuales
+  const handleCreateChannel = async () => {
+    if (!newChannelName.trim()) return;
+    
+    setIsCreatingChannel(true);
+    try {
+      const filters = {
+        genre: selectedGenre !== 'all' ? selectedGenre : undefined,
+        search: searchQuery || undefined,
+        mood: undefined // Por ahora no tenemos filtro explícito de mood en UI principal
+      };
+
+      const { error } = await supabase
+        .from('channels')
+        .insert({
+          name: newChannelName,
+          filters: filters,
+          is_active: true
+        });
+
+      if (error) throw error;
+
+      alert('✅ Canal creado exitosamente');
+      setIsChannelModalOpen(false);
+      setNewChannelName('');
+    } catch (error) {
+      console.error('Error creating channel:', error);
+      alert('Error al crear el canal');
+    } finally {
+      setIsCreatingChannel(false);
+    }
+  };
 
   // Obtener géneros únicos
   const genres = ['all', ...Array.from(new Set(songs.map(s => s.genre)))];
@@ -573,6 +616,18 @@ export default function SongLibrary({
               </>
             )}
           </button>
+
+          {/* Botón para crear Canal (Admin/Editor) */}
+          {(userRole === 'admin' || userRole === 'editor') && (
+            <button
+              onClick={() => setIsChannelModalOpen(true)}
+              className="px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2 border bg-gray-50 dark:bg-white/5 text-zinc-600 dark:text-gray-300 border-zinc-300 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 hover:border-zinc-400"
+              title="Crear un canal con los filtros actuales"
+            >
+              <Save className="w-5 h-5" />
+              Guardar Canal
+            </button>
+          )}
         </div>
 
         {/* Filtros */}
@@ -598,11 +653,11 @@ export default function SongLibrary({
 
           {/* Ordenar por */}
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">Ordenar por</label>
+            <label className="block text-sm font-medium text-zinc-500 dark:text-gray-400 mb-2">Ordenar por</label>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="w-full px-4 py-2 rounded-lg bg-zinc-800 text-white border border-white/10 focus:border-purple-500 focus:ring-2 focus:ring-purple-500 outline-none [&>option]:bg-zinc-800 [&>option]:text-white"
+              className="w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-zinc-800 text-zinc-900 dark:text-white border border-zinc-300 dark:border-white/10 focus:border-blue-500 dark:focus:border-purple-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-purple-500 outline-none transition-colors cursor-pointer [&>option]:bg-white [&>option]:text-zinc-900 dark:[&>option]:bg-zinc-800 dark:[&>option]:text-white"
             >
               <option value="recent">Más recientes</option>
               <option value="oldest">Más antiguas</option>
@@ -612,6 +667,67 @@ export default function SongLibrary({
           </div>
         </div>
       </div>
+
+      {/* Channel Creation Modal */}
+      {isChannelModalOpen && (
+        <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-xl w-full max-w-md overflow-hidden shadow-2xl border border-zinc-200 dark:border-zinc-700">
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-4">Crear Canal</h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
+                Guarda los filtros actuales como un "Canal" para que los usuarios puedan acceder rápidamente a esta selección de música.
+              </p>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Nombre del Canal</label>
+                  <input
+                    type="text"
+                    value={newChannelName}
+                    onChange={(e) => setNewChannelName(e.target.value)}
+                    placeholder="Ej: Relax, Jazz Vibes, Lo-Fi Study..."
+                    className="w-full px-4 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+                
+                <div className="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-lg text-sm text-zinc-600 dark:text-zinc-400">
+                  <p className="font-medium mb-2">Filtros a guardar:</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>Género: {selectedGenre === 'all' ? 'Todos' : selectedGenre}</li>
+                    {searchQuery && <li>Búsqueda: "{searchQuery}"</li>}
+                  </ul>
+                </div>
+              </div>
+              
+              <div className="flex gap-3 mt-8 justify-end">
+                <button
+                  onClick={() => setIsChannelModalOpen(false)}
+                  className="px-4 py-2 rounded-lg bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleCreateChannel}
+                  disabled={!newChannelName.trim() || isCreatingChannel}
+                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {isCreatingChannel ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Creando...
+                    </>
+                  ) : (
+                    <>
+                      <Radio className="w-4 h-4" />
+                      Crear Canal
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Resultados y Toggle de Vista */}
       <div className="flex items-center justify-between">

@@ -8,24 +8,8 @@ import SongLibrary from '@/components/SongLibrary';
 import SongEditor from '@/components/SongEditor';
 import MusicPlayer from '@/components/MusicPlayer';
 import ThemeToggle from '@/components/ThemeToggle';
+import { Song, UserRole } from '@/types';
 import { Sparkles, Music2, Settings, LogOut, Shield, User, Radio } from 'lucide-react';
-
-interface Song {
-  id: string;
-  title: string;
-  genre: string;
-  audio_url: string;
-  image_url?: string;
-  duration: number;
-  created_at: string;
-  is_favorite: boolean;
-  play_count: number;
-  suno_id?: string;
-  mood?: string;
-  tempo?: string;
-  energy?: number;
-  prompt?: string;
-}
 
 export default function MainApp() {
   const router = useRouter();
@@ -378,6 +362,7 @@ export default function MainApp() {
         {activeTab === 'library' && (
           <SongLibrary
             songs={songsWithFavorites}
+            userRole={userProfile?.role}
             onToggleFavorite={handleToggleFavorite}
             onDelete={handleDeleteSong}
             onRegenerate={handleRegenerateSong}

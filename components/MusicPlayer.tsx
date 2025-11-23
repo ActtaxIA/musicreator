@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Song, supabase } from '@/lib/supabase';
+import { Channel } from '@/types';
 import {
   Play,
   Pause,
@@ -19,7 +20,8 @@ import {
   ArrowUpDown,
   Heart,
   Search,
-  Globe
+  Globe,
+  Radio
 } from 'lucide-react';
 
 type SortKey = 'title' | 'mood' | 'genre' | 'bpm' | 'language' | 'duration';
@@ -46,6 +48,37 @@ export default function MusicPlayer({ songs, userId, onToggleFavorite }: Props) 
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [queue, setQueue] = useState<Song[]>([]);
+  const [channels, setChannels] = useState<Channel[]>([]);
+  const [activeChannelId, setActiveChannelId] = useState<string | null>(null);
+
+  // Cargar canales al montar
+  useEffect(() => {
+    const fetchChannels = async () => {
+      const { data } = await supabase
+        .from('channels')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+      if (data) setChannels(data);
+    };
+    fetchChannels();
+  }, []);
+
+  const handleSelectChannel = (channel: Channel) => {
+    if (activeChannelId === channel.id) {
+      // Deseleccionar
+      setActiveChannelId(null);
+      setSelectedGenre('all');
+      setSearchQuery('');
+    } else {
+      // Seleccionar
+      setActiveChannelId(channel.id);
+      if (channel.filters.genre) setSelectedGenre(channel.filters.genre);
+      if (channel.filters.search) setSearchQuery(channel.filters.search);
+      // Limpiar otros filtros si es necesario
+      setShowFavoritesOnly(false);
+    }
+  };
 
   // Obtener géneros únicos y ordenar alfabéticamente
   const uniqueGenres = Array.from(new Set(songs.map(s => s.genre))).sort();
@@ -631,6 +664,27 @@ export default function MusicPlayer({ songs, userId, onToggleFavorite }: Props) 
         {/* COLUMNA DERECHA: BIBLIOTECA & FILTROS */}
         <div className="flex flex-col gap-4 min-h-0 h-[500px] lg:h-full overflow-hidden">
           
+          {/* CANALES (Playlists Curadas) */}
+          {channels.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto pb-1 shrink-0 custom-scrollbar">
+              {channels.map(channel => (
+                <button
+                  key={channel.id}
+                  onClick={() => handleSelectChannel(channel)}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap transition-all border ${
+                    activeChannelId === channel.id
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                      : 'bg-white dark:bg-[#18181b] text-zinc-600 dark:text-zinc-400 border-zinc-300 dark:border-white/10 hover:border-blue-500 hover:text-blue-600 dark:hover:text-white'
+                  }`}
+                  title={channel.description}
+                >
+                  <Radio className="w-3 h-3" />
+                  {channel.name}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* BARRA SUPERIOR DE FILTROS (Dropdowns Técnicos) */}
           <div className="bg-white dark:bg-[#18181b] rounded-xl p-3 border border-zinc-300 dark:border-white/5 flex flex-col md:flex-row items-start md:items-center justify-between shadow-lg shrink-0 gap-3 transition-colors duration-200">
             <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-500 text-xs font-bold uppercase tracking-widest pl-2 flex-1 min-w-0 w-full md:w-auto">
