@@ -1,0 +1,154 @@
+# Reglas del Proyecto Ondeon Music Generator
+
+## 🎯 Objetivo del Proyecto
+Aplicación de generación de música con IA usando SunoAPI, Next.js, React, TypeScript, Supabase y OpenAI DALL-E 3.
+
+## 🚫 PROHIBIDO - Acciones Agresivas
+
+### NO crear archivos nuevos sin confirmación explícita del usuario
+- ❌ NO crear nuevos componentes, páginas, o módulos sin pedirlo
+- ❌ NO crear nuevos archivos de configuración
+- ❌ NO crear nuevos scripts o utilidades
+- ⚠️ Si es absolutamente necesario, PREGUNTAR PRIMERO al usuario
+
+### NO eliminar archivos sin confirmación explícita
+- ❌ NO eliminar componentes existentes
+- ❌ NO eliminar archivos de configuración
+- ❌ NO eliminar scripts o utilidades
+- ⚠️ Si es necesario, PREGUNTAR PRIMERO al usuario
+
+### NO hacer cambios masivos sin confirmación
+- ❌ NO refactorizar múltiples archivos a la vez
+- ❌ NO cambiar nombres de archivos o mover archivos
+- ❌ NO reorganizar la estructura del proyecto
+- ⚠️ Hacer cambios INCREMENTALES y PEQUEÑOS
+
+## ✅ PERMITIDO - Modificaciones Controladas
+
+### Modificar archivos existentes (con cuidado)
+- ✅ Corregir bugs en archivos existentes
+- ✅ Añadir funcionalidades pequeñas a componentes existentes
+- ✅ Ajustar estilos y UI
+- ✅ Optimizar código existente
+
+### Antes de modificar, SIEMPRE:
+1. 📖 Leer el archivo completo primero
+2. 🎯 Identificar el cambio mínimo necesario
+3. 🔍 Verificar que no afecta otras partes
+4. ✏️ Hacer solo el cambio necesario
+
+## 🛠️ Flujo de Trabajo Recomendado
+
+### Para bugs o ajustes:
+1. Identificar el archivo afectado
+2. Leer el contexto
+3. Hacer el cambio mínimo necesario
+4. Verificar que no rompe nada
+
+### Para nuevas features:
+1. **PREGUNTAR** al usuario si quiere crear nuevos archivos
+2. **PROPONER** la solución (sin implementar)
+3. **ESPERAR** confirmación
+4. Solo entonces implementar
+
+## 📝 Comunicación con el Usuario
+
+### SIEMPRE comunicar:
+- 🔧 "Voy a modificar el archivo X para corregir Y"
+- ❓ "¿Quieres que cree un nuevo archivo para Z?"
+- ⚠️ "Este cambio puede afectar A, B, C. ¿Procedo?"
+
+### NUNCA asumir:
+- ❌ "El usuario quiere que reorganice todo"
+- ❌ "Debería crear un nuevo componente"
+- ❌ "Voy a eliminar este archivo antiguo"
+
+## 🎨 Estándares del Proyecto
+
+### Stack Tecnológico (NO cambiar):
+- Next.js 14 con App Router
+- React con TypeScript
+- Supabase (Auth + Database + Storage)
+- SunoAPI para generación de música
+- OpenAI DALL-E 3 para covers
+- Tailwind CSS para estilos
+
+### Estructura (NO reorganizar):
+```
+app/              # Next.js pages
+components/       # React components
+lib/              # Utilities
+scripts/          # SQL y otros scripts
+public/           # Assets estáticos
+```
+
+### Convenciones de código:
+- Usar TypeScript siempre
+- Componentes en PascalCase
+- Archivos de componentes con extensión .tsx
+- Usar Tailwind para estilos (no crear nuevos CSS)
+- Español en UI, inglés en código
+
+## 🔒 Archivos Críticos (Extra cuidado)
+
+### NO modificar sin confirmación explícita:
+- `.env.local` - Variables de entorno sensibles
+- `package.json` - Dependencias
+- `next.config.js` - Configuración de Next.js
+- `tsconfig.json` - Configuración de TypeScript
+- `tailwind.config.js` - Configuración de Tailwind
+
+### Modificar con mucho cuidado:
+- `app/page.tsx` - Página principal
+- `lib/supabase.ts` - Cliente de Supabase
+- Archivos de API routes en `app/api/`
+
+## 💾 Base de Datos
+
+### NO hacer cambios de schema sin SQL explícito:
+- ❌ NO asumir que una tabla existe
+- ❌ NO asumir que una columna existe
+- ✅ Proponer script SQL y esperar confirmación
+- ✅ Crear scripts en `/scripts/` para migraciones
+
+## 🎵 Reglas Específicas del Proyecto
+
+### Generación de Música:
+- Siempre guardar en Supabase Storage (permanente)
+- Generar covers con DALL-E 3 en segundo plano
+- No bloquear la generación por el cover
+- Logs en tiempo real en el modal
+
+### Reproductor:
+- Comportamiento tipo Spotify
+- Scroll automático en la cola
+- Persistir pestaña activa en localStorage
+- Play/Pause sin reiniciar
+
+### Biblioteca:
+- Paginación de 20 items
+- Lazy loading de imágenes
+- Vistas: grid y list
+- Filtros por género, idioma, favoritos, sin cover
+
+## ⚠️ Recordatorios
+
+1. **MENOS ES MÁS**: Cambios pequeños e incrementales
+2. **PREGUNTAR PRIMERO**: Si hay duda, preguntar
+3. **NO ASUMIR**: El usuario sabe lo que quiere
+4. **LEER ANTES DE MODIFICAR**: Entender el código existente
+5. **NO CREAR BACKUPS**: El usuario no los quiere
+6. **NO ROMPER LO QUE FUNCIONA**: Si funciona, no lo toques
+
+## 🚀 Prioridades
+
+1. 🐛 Corregir bugs
+2. 🎨 Mejorar UX
+3. ⚡ Optimizar performance
+4. ✨ Añadir features (solo si se pide explícitamente)
+
+---
+
+**Resumen**: Ser conservador, modificar solo lo necesario, preguntar antes de crear/eliminar, cambios incrementales.
+
+
