@@ -34,9 +34,17 @@
   box-sizing: border-box;
 }
 
+html {
+  height: 100%;
+}
+
 body {
   min-height: 100vh;
-  overflow-x: hidden;
+  width: 100%;
+  overflow-x: hidden; /* Bloquea scroll lateral accidental */
+  overscroll-behavior-x: none; /* Bloquea gestos de navegación lateral */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Scrollbar personalizado */

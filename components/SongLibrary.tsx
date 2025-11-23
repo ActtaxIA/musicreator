@@ -665,10 +665,10 @@ export default function SongLibrary({
           {paginatedSongs.map((song) => (
             <div
               key={song.id}
-              className="bg-white dark:bg-white/5 backdrop-blur-lg rounded-xl overflow-hidden hover:shadow-2xl transition-all border border-zinc-200 dark:border-white/10 hover:border-blue-400 dark:hover:border-white/20 group"
+              className="bg-zinc-50 dark:bg-white/5 backdrop-blur-lg rounded-xl overflow-hidden hover:shadow-xl transition-all border border-zinc-300 dark:border-white/10 hover:border-blue-500 dark:hover:border-white/20 group"
             >
               {/* Imagen/Artwork */}
-              <div className="relative aspect-square bg-gray-100 dark:bg-white/5 flex items-center justify-center">
+              <div className="relative aspect-square bg-zinc-200 dark:bg-white/5 flex items-center justify-center">
                 {song.image_url && !needsCover(song) ? (
                   <img 
                     src={song.image_url} 
