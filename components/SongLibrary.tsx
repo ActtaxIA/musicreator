@@ -720,21 +720,21 @@ export default function SongLibrary({
                   <div className="relative">
                     <button
                       onClick={() => setOpenMenuId(openMenuId === song.id ? null : song.id)}
-                      className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                      className="p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-white/10 transition-colors text-zinc-600 dark:text-gray-400"
                     >
-                      <MoreVertical className="w-5 h-5 text-zinc-500 dark:text-gray-400" />
+                      <MoreVertical className="w-5 h-5" />
                     </button>
                     
                     {openMenuId === song.id && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-zinc-200 dark:border-white/10 overflow-hidden z-50">
+                      <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-zinc-300 dark:border-white/10 overflow-hidden z-50">
                         <button
                           onClick={() => {
                             onToggleFavorite(song.id);
                             setOpenMenuId(null);
                           }}
-                          className="w-full px-4 py-3 text-left text-zinc-700 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors flex items-center gap-2"
+                          className="w-full px-4 py-3 text-left text-zinc-800 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors flex items-center gap-2 font-medium"
                         >
-                          <Heart className={`w-4 h-4 ${song.is_favorite ? 'fill-current text-pink-500' : ''}`} />
+                          <Heart className={`w-4 h-4 ${song.is_favorite ? 'fill-current text-pink-500' : 'text-zinc-500 dark:text-white'}`} />
                           {song.is_favorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
                         </button>
                         <button
@@ -742,9 +742,9 @@ export default function SongLibrary({
                             onRegenerate(song);
                             setOpenMenuId(null);
                           }}
-                          className="w-full px-4 py-3 text-left text-zinc-700 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors flex items-center gap-2"
+                          className="w-full px-4 py-3 text-left text-zinc-800 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors flex items-center gap-2 font-medium"
                         >
-                          <RefreshCw className="w-4 h-4" />
+                          <RefreshCw className="w-4 h-4 text-zinc-500 dark:text-white" />
                           Regenerar similar
                         </button>
                         {needsCover(song) && (

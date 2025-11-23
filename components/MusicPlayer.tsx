@@ -669,13 +669,13 @@ export default function MusicPlayer({ songs, userId, onToggleFavorite }: Props) 
                 <select
                   value={selectedGenre}
                   onChange={(e) => setSelectedGenre(e.target.value)}
-                  className="w-full md:w-auto appearance-none bg-white dark:bg-[#09090b] text-xs font-medium text-zinc-700 dark:text-zinc-300 border border-zinc-300 dark:border-zinc-800 rounded px-3 py-2 md:py-1.5 pr-8 hover:border-zinc-400 dark:hover:border-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-colors focus:outline-none focus:border-blue-500 dark:focus:border-cyan-500/50 uppercase tracking-wide min-w-[140px] cursor-pointer"
+                  className="w-full md:w-auto appearance-none bg-white dark:bg-[#09090b] text-xs font-bold text-zinc-800 dark:text-zinc-300 border border-zinc-300 dark:border-zinc-800 rounded px-3 py-2 md:py-1.5 pr-8 hover:border-zinc-400 dark:hover:border-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-colors focus:outline-none focus:border-blue-500 dark:focus:border-cyan-500/50 uppercase tracking-wide min-w-[140px] cursor-pointer shadow-sm"
                 >
                   {genres.map(genre => (
-                    <option key={genre} value={genre}>{genre === 'all' ? 'TODOS LOS GÉNEROS' : genre}</option>
+                    <option key={genre} value={genre} className="text-zinc-900 dark:text-white bg-white dark:bg-[#09090b] font-medium">{genre === 'all' ? 'TODOS LOS GÉNEROS' : genre}</option>
                   ))}
                 </select>
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400 dark:text-zinc-500">
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500 dark:text-zinc-500">
                    <Music2 className="w-3 h-3" />
                 </div>
               </div>
@@ -685,41 +685,41 @@ export default function MusicPlayer({ songs, userId, onToggleFavorite }: Props) 
                  <select
                   value={selectedLanguage}
                   onChange={(e) => setSelectedLanguage(e.target.value)}
-                  className="w-full md:w-auto appearance-none bg-[#09090b] text-xs font-medium text-zinc-300 border border-zinc-800 rounded px-3 py-2 md:py-1.5 pr-8 hover:border-zinc-600 hover:text-white transition-colors focus:outline-none focus:border-cyan-500/50 uppercase tracking-wide min-w-[120px] cursor-pointer"
+                  className="w-full md:w-auto appearance-none bg-white dark:bg-[#09090b] text-xs font-bold text-zinc-800 dark:text-zinc-300 border border-zinc-300 dark:border-zinc-800 rounded px-3 py-2 md:py-1.5 pr-8 hover:border-zinc-400 dark:hover:border-zinc-600 hover:text-zinc-900 dark:hover:text-white transition-colors focus:outline-none focus:border-blue-500 dark:focus:border-cyan-500/50 uppercase tracking-wide min-w-[120px] cursor-pointer shadow-sm"
                 >
                   {languages.map(lang => (
-                    <option key={lang} value={lang}>{lang === 'all' ? 'TODOS IDIOMAS' : lang}</option>
+                    <option key={lang} value={lang} className="text-zinc-900 dark:text-white bg-white dark:bg-[#09090b] font-medium">{lang === 'all' ? 'TODOS IDIOMAS' : lang}</option>
                   ))}
                 </select>
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
-                   <Clock className="w-3 h-3" />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500 dark:text-zinc-500">
+                   <Globe className="w-3 h-3" />
                 </div>
               </div>
             </div>
           </div>
 
           {/* LISTA DE CANCIONES (Estilo Data Table) */}
-          <div className="flex-1 bg-[#18181b] rounded-xl border border-white/5 overflow-hidden flex flex-col shadow-lg min-h-0">
+          <div className="flex-1 bg-white dark:bg-[#18181b] rounded-xl border border-zinc-200 dark:border-white/5 overflow-hidden flex flex-col shadow-lg min-h-0">
             {/* Header de la Tabla */}
-            <div className="grid grid-cols-[40px_30px_1fr_60px] md:grid-cols-[40px_30px_1fr_100px_100px_60px_60px_60px] gap-3 p-3 border-b border-white/5 text-[10px] font-bold text-zinc-600 uppercase tracking-wider bg-[#18181b] z-10 shrink-0">
+            <div className="grid grid-cols-[40px_30px_1fr_60px] md:grid-cols-[40px_30px_1fr_100px_100px_60px_60px_60px] gap-3 p-3 border-b border-zinc-200 dark:border-white/5 text-[10px] font-bold text-zinc-500 dark:text-zinc-600 uppercase tracking-wider bg-gray-50 dark:bg-[#18181b] z-10 shrink-0">
               <span className="text-center">#</span>
               <span className="text-center"></span> {/* Columna vacía para corazón */}
-              <button onClick={() => handleSort('title')} className="flex items-center gap-1 hover:text-zinc-300 transition-colors group text-left">
+              <button onClick={() => handleSort('title')} className="flex items-center gap-1 hover:text-zinc-800 dark:hover:text-zinc-300 transition-colors group text-left">
                 Track {getSortIcon('title')}
               </button>
-              <button onClick={() => handleSort('mood')} className="hidden md:flex items-center gap-1 hover:text-zinc-300 transition-colors group text-left">
+              <button onClick={() => handleSort('mood')} className="hidden md:flex items-center gap-1 hover:text-zinc-800 dark:hover:text-zinc-300 transition-colors group text-left">
                 Mood {getSortIcon('mood')}
               </button>
-              <button onClick={() => handleSort('genre')} className="hidden md:flex items-center gap-1 hover:text-zinc-300 transition-colors group text-left">
+              <button onClick={() => handleSort('genre')} className="hidden md:flex items-center gap-1 hover:text-zinc-800 dark:hover:text-zinc-300 transition-colors group text-left">
                 Genre {getSortIcon('genre')}
               </button>
-              <button onClick={() => handleSort('bpm')} className="hidden md:flex items-center justify-center gap-1 hover:text-zinc-300 transition-colors group text-center">
+              <button onClick={() => handleSort('bpm')} className="hidden md:flex items-center justify-center gap-1 hover:text-zinc-800 dark:hover:text-zinc-300 transition-colors group text-center">
                 BPM {getSortIcon('bpm')}
               </button>
-              <button onClick={() => handleSort('language')} className="hidden md:flex items-center justify-center gap-1 hover:text-zinc-300 transition-colors group text-center">
+              <button onClick={() => handleSort('language')} className="hidden md:flex items-center justify-center gap-1 hover:text-zinc-800 dark:hover:text-zinc-300 transition-colors group text-center">
                 Lang {getSortIcon('language')}
               </button>
-              <button onClick={() => handleSort('duration')} className="flex items-center justify-end gap-1 hover:text-zinc-300 transition-colors group text-right">
+              <button onClick={() => handleSort('duration')} className="flex items-center justify-end gap-1 hover:text-zinc-800 dark:hover:text-zinc-300 transition-colors group text-right">
                 Time {getSortIcon('duration')}
               </button>
             </div>
