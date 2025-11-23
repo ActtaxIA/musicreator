@@ -63,6 +63,7 @@ export default function SongLibrary({
   const [newChannelName, setNewChannelName] = useState('');
   const [isCreatingChannel, setIsCreatingChannel] = useState(false);
   const [userChannels, setUserChannels] = useState<any[]>([]); // Lista de canales para el menú contextual
+  const [songChannels, setSongChannels] = useState<Record<string, string[]>>({}); // Mapa de songId -> channelIds[]
   
   const audioRef = useRef<HTMLAudioElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
@@ -77,6 +78,23 @@ export default function SongLibrary({
       fetchChannels();
     }
   }, [userRole]);
+
+  // Cargar canales asignados de cada canción cuando se abre el menú
+  const fetchSongChannels = async (songId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('channel_songs')
+        .select('channel_id')
+        .eq('song_id', songId);
+      
+      if (error) throw error;
+      
+      const channelIds = data?.map(item => item.channel_id) || [];
+      setSongChannels(prev => ({ ...prev, [songId]: channelIds }));
+    } catch (error) {
+      console.error('Error fetching song channels:', error);
+    }
+  };
 
   // Función para crear canal vacío (Manual)
   const handleCreateChannel = async () => {
@@ -109,29 +127,51 @@ export default function SongLibrary({
     }
   };
 
-  // Función para añadir canción a canal
+  // Función para añadir/quitar canción de canal (toggle)
   const handleAddToChannel = async (songId: string, channelId: string) => {
     try {
-      const { error } = await supabase
-        .from('channel_songs')
-        .insert({
-          channel_id: channelId,
-          song_id: songId
-        });
+      const currentChannels = songChannels[songId] || [];
+      const isInChannel = currentChannels.includes(channelId);
 
-      if (error) {
-        if (error.code === '23505') { // Unique violation
-          alert('Esta canción ya está en ese canal');
-        } else {
-          throw error;
-        }
+      if (isInChannel) {
+        // Quitar del canal
+        const { error } = await supabase
+          .from('channel_songs')
+          .delete()
+          .eq('channel_id', channelId)
+          .eq('song_id', songId);
+
+        if (error) throw error;
+        
+        // Actualizar estado local
+        setSongChannels(prev => ({
+          ...prev,
+          [songId]: currentChannels.filter(id => id !== channelId)
+        }));
+        
+        console.log('✅ Canción quitada del canal');
       } else {
-        alert('✅ Canción añadida al canal');
-        setOpenMenuId(null);
+        // Añadir al canal
+        const { error } = await supabase
+          .from('channel_songs')
+          .insert({
+            channel_id: channelId,
+            song_id: songId
+          });
+
+        if (error) throw error;
+
+        // Actualizar estado local
+        setSongChannels(prev => ({
+          ...prev,
+          [songId]: [...currentChannels, channelId]
+        }));
+        
+        console.log('✅ Canción añadida al canal');
       }
     } catch (error) {
-      console.error('Error adding to channel:', error);
-      alert('Error al añadir al canal');
+      console.error('Error toggling channel:', error);
+      console.error('❌ Error al gestionar canal');
     }
   };
 
@@ -986,36 +1026,48 @@ export default function SongLibrary({
                    {/* Botones adicionales: Añadir a Canal, Editar, Eliminar */}
                    <div className="grid grid-cols-3 gap-1">
                      {/* Añadir a Canal (Admin/Editor) */}
-                     {(userRole === 'admin' || userRole === 'editor') && userChannels.length > 0 && (
-                       <div className="relative col-span-3">
-                         <button
-                           onClick={() => setOpenMenuId(openMenuId === song.id ? null : song.id)}
-                           className="w-full p-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-all text-xs font-medium flex items-center justify-center gap-1"
-                         >
-                           <Radio className="w-3 h-3" />
-                           Añadir a Canal
-                         </button>
-                         
-                         {/* Dropdown de canales */}
-                         {openMenuId === song.id && (
-                           <div className="absolute bottom-full left-0 right-0 mb-1 bg-white dark:bg-gray-900 rounded-lg shadow-2xl border-2 border-blue-200 dark:border-blue-800 overflow-hidden z-50 max-h-40 overflow-y-auto">
-                             {userChannels.map(channel => (
-                               <button
-                                 key={channel.id}
-                                 onClick={() => {
-                                   handleAddToChannel(song.id, channel.id);
-                                   setOpenMenuId(null);
-                                 }}
-                                 className="w-full px-3 py-2 text-left text-zinc-800 dark:text-white hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors flex items-center gap-2 text-xs border-b border-zinc-100 dark:border-zinc-800 last:border-0"
-                               >
-                                 <Radio className="w-3 h-3 text-blue-500 flex-shrink-0" />
-                                 <span className="font-medium truncate">{channel.name}</span>
-                               </button>
-                             ))}
-                           </div>
-                         )}
-                       </div>
-                     )}
+                    {(userRole === 'admin' || userRole === 'editor') && userChannels.length > 0 && (
+                      <div className="relative col-span-3">
+                        <button
+                          onClick={() => {
+                            if (openMenuId === song.id) {
+                              setOpenMenuId(null);
+                            } else {
+                              setOpenMenuId(song.id);
+                              fetchSongChannels(song.id); // Cargar canales asignados
+                            }
+                          }}
+                          className="w-full p-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-all text-xs font-medium flex items-center justify-center gap-1"
+                        >
+                          <Radio className="w-3 h-3" />
+                          Añadir a Canal
+                        </button>
+                        
+                        {/* Dropdown de canales */}
+                        {openMenuId === song.id && (
+                          <div className="absolute bottom-full left-0 right-0 mb-1 bg-white dark:bg-gray-900 rounded-lg shadow-2xl border-2 border-blue-200 dark:border-blue-800 overflow-hidden z-50 max-h-40 overflow-y-auto">
+                            {userChannels.map(channel => {
+                              const isInChannel = (songChannels[song.id] || []).includes(channel.id);
+                              return (
+                                <button
+                                  key={channel.id}
+                                  onClick={() => handleAddToChannel(song.id, channel.id)}
+                                  className={`w-full px-3 py-2 text-left transition-colors flex items-center gap-2 text-xs border-b border-zinc-100 dark:border-zinc-800 last:border-0 ${
+                                    isInChannel 
+                                      ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 font-medium' 
+                                      : 'text-zinc-800 dark:text-white hover:bg-blue-50 dark:hover:bg-blue-900/30'
+                                  }`}
+                                >
+                                  <Radio className={`w-3 h-3 flex-shrink-0 ${isInChannel ? 'text-green-500' : 'text-blue-500'}`} />
+                                  <span className="truncate flex-1">{channel.name}</span>
+                                  {isInChannel && <span className="text-xs">✓</span>}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                      {/* Editar */}
                      {onEdit && (
@@ -1260,7 +1312,14 @@ export default function SongLibrary({
                     {(userRole === 'admin' || userRole === 'editor') && userChannels.length > 0 && (
                       <div className="relative">
                         <button
-                          onClick={() => setOpenMenuId(openMenuId === song.id ? null : song.id)}
+                          onClick={() => {
+                            if (openMenuId === song.id) {
+                              setOpenMenuId(null);
+                            } else {
+                              setOpenMenuId(song.id);
+                              fetchSongChannels(song.id); // Cargar canales asignados
+                            }
+                          }}
                           className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-500/20 hover:bg-blue-100 dark:hover:bg-blue-500/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 transition-colors flex items-center gap-1.5"
                           title="Añadir a Canal"
                         >
@@ -1273,21 +1332,26 @@ export default function SongLibrary({
                           <div className="absolute right-0 bottom-full mb-1 w-56 bg-white dark:bg-gray-900 rounded-lg shadow-2xl border-2 border-blue-200 dark:border-blue-800 overflow-hidden z-50 max-h-60 overflow-y-auto">
                             <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-xs font-bold text-blue-700 dark:text-blue-300 uppercase flex items-center gap-2 sticky top-0">
                               <Radio className="w-3 h-3" />
-                              Añadir a Canal
+                              Gestionar Canales
                             </div>
-                            {userChannels.map(channel => (
-                              <button
-                                key={channel.id}
-                                onClick={() => {
-                                  handleAddToChannel(song.id, channel.id);
-                                  setOpenMenuId(null);
-                                }}
-                                className="w-full px-4 py-3 text-left text-zinc-800 dark:text-white hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors flex items-center gap-3 border-b border-zinc-100 dark:border-zinc-800 last:border-0"
-                              >
-                                <Radio className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                                <span className="font-medium truncate">{channel.name}</span>
-                              </button>
-                            ))}
+                            {userChannels.map(channel => {
+                              const isInChannel = (songChannels[song.id] || []).includes(channel.id);
+                              return (
+                                <button
+                                  key={channel.id}
+                                  onClick={() => handleAddToChannel(song.id, channel.id)}
+                                  className={`w-full px-4 py-3 text-left transition-colors flex items-center gap-3 border-b border-zinc-100 dark:border-zinc-800 last:border-0 ${
+                                    isInChannel 
+                                      ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 font-bold' 
+                                      : 'text-zinc-800 dark:text-white hover:bg-blue-50 dark:hover:bg-blue-900/30'
+                                  }`}
+                                >
+                                  <Radio className={`w-4 h-4 flex-shrink-0 ${isInChannel ? 'text-green-500' : 'text-blue-500'}`} />
+                                  <span className="font-medium truncate flex-1">{channel.name}</span>
+                                  {isInChannel && <span className="text-sm font-bold">✓</span>}
+                                </button>
+                              );
+                            })}
                           </div>
                         )}
                       </div>
