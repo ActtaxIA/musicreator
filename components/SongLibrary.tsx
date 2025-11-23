@@ -1255,6 +1255,44 @@ export default function SongLibrary({
 
                  {/* Grupo Derecho (Acciones Extra) */}
                  <div className="flex items-center gap-2 pl-2 border-l border-zinc-200 dark:border-white/10">
+                    
+                    {/* Añadir a Canal (Admin/Editor) */}
+                    {(userRole === 'admin' || userRole === 'editor') && userChannels.length > 0 && (
+                      <div className="relative">
+                        <button
+                          onClick={() => setOpenMenuId(openMenuId === song.id ? null : song.id)}
+                          className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-500/20 hover:bg-blue-100 dark:hover:bg-blue-500/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 transition-colors flex items-center gap-1.5"
+                          title="Añadir a Canal"
+                        >
+                          <Radio className="w-5 h-5" />
+                          <span className="text-xs font-medium hidden sm:inline">Canal</span>
+                        </button>
+                        
+                        {/* Dropdown de canales */}
+                        {openMenuId === song.id && (
+                          <div className="absolute right-0 bottom-full mb-1 w-56 bg-white dark:bg-gray-900 rounded-lg shadow-2xl border-2 border-blue-200 dark:border-blue-800 overflow-hidden z-50 max-h-60 overflow-y-auto">
+                            <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-xs font-bold text-blue-700 dark:text-blue-300 uppercase flex items-center gap-2 sticky top-0">
+                              <Radio className="w-3 h-3" />
+                              Añadir a Canal
+                            </div>
+                            {userChannels.map(channel => (
+                              <button
+                                key={channel.id}
+                                onClick={() => {
+                                  handleAddToChannel(song.id, channel.id);
+                                  setOpenMenuId(null);
+                                }}
+                                className="w-full px-4 py-3 text-left text-zinc-800 dark:text-white hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors flex items-center gap-3 border-b border-zinc-100 dark:border-zinc-800 last:border-0"
+                              >
+                                <Radio className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                                <span className="font-medium truncate">{channel.name}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
                     {/* Cover Gen */}
                     {needsCover(song) && (
                       <button
