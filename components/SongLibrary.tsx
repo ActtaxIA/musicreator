@@ -62,40 +62,76 @@ export default function SongLibrary({
   const [isChannelModalOpen, setIsChannelModalOpen] = useState(false);
   const [newChannelName, setNewChannelName] = useState('');
   const [isCreatingChannel, setIsCreatingChannel] = useState(false);
+  const [userChannels, setUserChannels] = useState<any[]>([]); // Lista de canales para el menú contextual
   
   const audioRef = useRef<HTMLAudioElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
 
-  // Función para crear canal desde filtros actuales
+  // Cargar canales al montar (para el menú "Añadir a canal")
+  useEffect(() => {
+    if (userRole === 'admin' || userRole === 'editor') {
+      const fetchChannels = async () => {
+        const { data } = await supabase.from('channels').select('id, name').eq('is_active', true);
+        if (data) setUserChannels(data);
+      };
+      fetchChannels();
+    }
+  }, [userRole]);
+
+  // Función para crear canal vacío (Manual)
   const handleCreateChannel = async () => {
     if (!newChannelName.trim()) return;
     
     setIsCreatingChannel(true);
     try {
-      const filters = {
-        genre: selectedGenre !== 'all' ? selectedGenre : undefined,
-        search: searchQuery || undefined,
-        mood: undefined // Por ahora no tenemos filtro explícito de mood en UI principal
-      };
-
-      const { error } = await supabase
+      // Canal manual no tiene filtros predefinidos
+      const { data, error } = await supabase
         .from('channels')
         .insert({
           name: newChannelName,
-          filters: filters,
+          filters: {}, // Filtros vacíos = canal manual
           is_active: true
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
 
       alert('✅ Canal creado exitosamente');
       setIsChannelModalOpen(false);
       setNewChannelName('');
+      setUserChannels(prev => [...prev, data]); // Actualizar lista local
     } catch (error) {
       console.error('Error creating channel:', error);
       alert('Error al crear el canal');
     } finally {
       setIsCreatingChannel(false);
+    }
+  };
+
+  // Función para añadir canción a canal
+  const handleAddToChannel = async (songId: string, channelId: string) => {
+    try {
+      const { error } = await supabase
+        .from('channel_songs')
+        .insert({
+          channel_id: channelId,
+          song_id: songId
+        });
+
+      if (error) {
+        if (error.code === '23505') { // Unique violation
+          alert('Esta canción ya está en ese canal');
+        } else {
+          throw error;
+        }
+      } else {
+        alert('✅ Canción añadida al canal');
+        setOpenMenuId(null);
+      }
+    } catch (error) {
+      console.error('Error adding to channel:', error);
+      alert('Error al añadir al canal');
     }
   };
 
@@ -622,10 +658,10 @@ export default function SongLibrary({
             <button
               onClick={() => setIsChannelModalOpen(true)}
               className="px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2 border bg-gray-50 dark:bg-white/5 text-zinc-600 dark:text-gray-300 border-zinc-300 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 hover:border-zinc-400"
-              title="Crear un canal con los filtros actuales"
+              title="Crear un nuevo canal vacío"
             >
               <Save className="w-5 h-5" />
-              Guardar Canal
+              Crear Canal
             </button>
           )}
         </div>
@@ -675,7 +711,7 @@ export default function SongLibrary({
             <div className="p-6">
               <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-4">Crear Canal</h3>
               <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
-                Guarda los filtros actuales como un "Canal" para que los usuarios puedan acceder rápidamente a esta selección de música.
+                Crea un nuevo canal vacío. Podrás añadir canciones manualmente desde el menú de opciones de cada canción.
               </p>
               
               <div className="space-y-4">
@@ -685,17 +721,9 @@ export default function SongLibrary({
                     type="text"
                     value={newChannelName}
                     onChange={(e) => setNewChannelName(e.target.value)}
-                    placeholder="Ej: Relax, Jazz Vibes, Lo-Fi Study..."
+                    placeholder="Ej: Top Hits Verano, Selección Chill..."
                     className="w-full px-4 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
                   />
-                </div>
-                
-                <div className="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-lg text-sm text-zinc-600 dark:text-zinc-400">
-                  <p className="font-medium mb-2">Filtros a guardar:</p>
-                  <ul className="list-disc list-inside space-y-1">
-                    <li>Género: {selectedGenre === 'all' ? 'Todos' : selectedGenre}</li>
-                    {searchQuery && <li>Búsqueda: "{searchQuery}"</li>}
-                  </ul>
                 </div>
               </div>
               
@@ -897,6 +925,27 @@ export default function SongLibrary({
                             Generar Cover con IA
                           </button>
                         )}
+                        {/* Opción Añadir a Canal (Solo Admin/Editor) */}
+                        {(userRole === 'admin' || userRole === 'editor') && userChannels.length > 0 && (
+                          <>
+                            <div className="border-t border-zinc-200 dark:border-white/10 my-1" />
+                            <div className="px-4 py-2 text-xs font-semibold text-zinc-500 dark:text-gray-500 uppercase">
+                              Añadir a Canal
+                            </div>
+                            {userChannels.map(channel => (
+                              <button
+                                key={channel.id}
+                                onClick={() => handleAddToChannel(song.id, channel.id)}
+                                className="w-full px-4 py-2 text-left text-zinc-800 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors flex items-center gap-2 text-sm"
+                              >
+                                <Radio className="w-3 h-3" />
+                                {channel.name}
+                              </button>
+                            ))}
+                            <div className="border-t border-zinc-200 dark:border-white/10 my-1" />
+                          </>
+                        )}
+
                         <button
                           onClick={() => {
                             if (onEdit) {

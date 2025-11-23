@@ -67,43 +67,36 @@ export default function MusicPlayer({ songs, userId, userRole, onToggleFavorite 
     fetchChannels();
   }, []);
 
-  const handleDeleteChannel = async (channelId: string) => {
-    if (!confirm('¿Estás seguro de eliminar este canal?')) return;
-
-    try {
-      const { error } = await supabase
-        .from('channels')
-        .update({ is_active: false }) // Soft delete
-        .eq('id', channelId);
-
-      if (error) throw error;
-
-      // Actualizar estado local
-      setChannels(channels.filter(c => c.id !== channelId));
-      if (activeChannelId === channelId) {
-        setActiveChannelId(null);
-        setSelectedGenre('all');
-        setSearchQuery('');
-      }
-    } catch (error) {
-      console.error('Error deleting channel:', error);
-      alert('Error al eliminar el canal');
-    }
-  };
-
-  const handleSelectChannel = (channel: Channel) => {
+  const handleSelectChannel = async (channel: Channel) => {
     if (activeChannelId === channel.id) {
-      // Deseleccionar
+      // Deseleccionar (volver a todas las canciones)
       setActiveChannelId(null);
-      setSelectedGenre('all');
-      setSearchQuery('');
+      setQueue(songs); // Restaurar lista original (filtrada por otros criterios si los hubiera)
     } else {
-      // Seleccionar
+      // Seleccionar canal
       setActiveChannelId(channel.id);
-      if (channel.filters.genre) setSelectedGenre(channel.filters.genre);
-      if (channel.filters.search) setSearchQuery(channel.filters.search);
-      // Limpiar otros filtros si es necesario
-      setShowFavoritesOnly(false);
+      
+      try {
+        // Obtener canciones del canal desde la tabla intermedia
+        const { data: channelSongs, error } = await supabase
+          .from('channel_songs')
+          .select('song_id')
+          .eq('channel_id', channel.id);
+
+        if (error) throw error;
+
+        const songIds = channelSongs.map(item => item.song_id);
+        
+        // Filtrar la lista actual de canciones para mostrar solo las del canal
+        const songsInChannel = songs.filter(song => songIds.includes(song.id));
+        
+        setQueue(songsInChannel);
+        setCurrentSongIndex(0); // Reiniciar índice
+        
+      } catch (error) {
+        console.error('Error loading channel songs:', error);
+        alert('Error al cargar canciones del canal');
+      }
     }
   };
 
