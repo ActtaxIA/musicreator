@@ -18,7 +18,8 @@ import {
   ArrowDown,
   ArrowUpDown,
   Heart,
-  Search
+  Search,
+  Globe
 } from 'lucide-react';
 
 type SortKey = 'title' | 'mood' | 'genre' | 'bpm' | 'language' | 'duration';

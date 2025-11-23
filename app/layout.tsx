@@ -18,8 +18,8 @@ export const metadata: Metadata = {
   description: 'Generador de música con IA - Herramienta interna',
   manifest: '/manifest.json',
   icons: {
-    icon: '/favicon.ico',
-    apple: '/icon-192x192.png', // Icono para iPhone
+    icon: '/icon.svg',
+    apple: '/icon.svg', // Usar SVG como fallback, iOS lo rasterizará o usará el favicon
   },
   appleWebApp: {
     capable: true,
