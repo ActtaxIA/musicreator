@@ -58,8 +58,11 @@ export default function SongLibrary({
   const [itemsPerPage] = useState(60);
   const [isGeneratingCovers, setIsGeneratingCovers] = useState(false);
   
-  // Estado para gestión de canales (solo para añadir canciones)
-  const [userChannels, setUserChannels] = useState<any[]>([]);
+  // Estado para creación de canales
+  const [isChannelModalOpen, setIsChannelModalOpen] = useState(false);
+  const [newChannelName, setNewChannelName] = useState('');
+  const [isCreatingChannel, setIsCreatingChannel] = useState(false);
+  const [userChannels, setUserChannels] = useState<any[]>([]); // Lista de canales para el menú contextual
   
   const audioRef = useRef<HTMLAudioElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
@@ -74,6 +77,37 @@ export default function SongLibrary({
       fetchChannels();
     }
   }, [userRole]);
+
+  // Función para crear canal vacío (Manual)
+  const handleCreateChannel = async () => {
+    if (!newChannelName.trim()) return;
+    
+    setIsCreatingChannel(true);
+    try {
+      // Canal manual no tiene filtros predefinidos
+      const { data, error } = await supabase
+        .from('channels')
+        .insert({
+          name: newChannelName,
+          filters: {}, // Filtros vacíos = canal manual
+          is_active: true
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      alert('✅ Canal creado exitosamente');
+      setIsChannelModalOpen(false);
+      setNewChannelName('');
+      setUserChannels(prev => [...prev, data]); // Actualizar lista local
+    } catch (error) {
+      console.error('Error creating channel:', error);
+      alert('Error al crear el canal');
+    } finally {
+      setIsCreatingChannel(false);
+    }
+  };
 
   // Función para añadir canción a canal
   const handleAddToChannel = async (songId: string, channelId: string) => {
@@ -619,6 +653,17 @@ export default function SongLibrary({
             )}
           </button>
 
+          {/* Botón para crear Canal (Admin/Editor) */}
+          {(userRole === 'admin' || userRole === 'editor') && (
+            <button
+              onClick={() => setIsChannelModalOpen(true)}
+              className="px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2 border bg-gray-50 dark:bg-white/5 text-zinc-600 dark:text-gray-300 border-zinc-300 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 hover:border-zinc-400"
+              title="Crear un nuevo canal vacío"
+            >
+              <Save className="w-5 h-5" />
+              Crear Canal
+            </button>
+          )}
         </div>
 
         {/* Filtros */}
@@ -658,6 +703,59 @@ export default function SongLibrary({
           </div>
         </div>
       </div>
+
+      {/* Channel Creation Modal */}
+      {isChannelModalOpen && (
+        <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-xl w-full max-w-md overflow-hidden shadow-2xl border border-zinc-200 dark:border-zinc-700">
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-4">Crear Canal</h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
+                Crea un nuevo canal vacío. Podrás añadir canciones manualmente desde el menú de opciones de cada canción.
+              </p>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Nombre del Canal</label>
+                  <input
+                    type="text"
+                    value={newChannelName}
+                    onChange={(e) => setNewChannelName(e.target.value)}
+                    placeholder="Ej: Top Hits Verano, Selección Chill..."
+                    className="w-full px-4 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex gap-3 mt-8 justify-end">
+                <button
+                  onClick={() => setIsChannelModalOpen(false)}
+                  className="px-4 py-2 rounded-lg bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleCreateChannel}
+                  disabled={!newChannelName.trim() || isCreatingChannel}
+                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {isCreatingChannel ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Creando...
+                    </>
+                  ) : (
+                    <>
+                      <Radio className="w-4 h-4" />
+                      Crear Canal
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Resultados y Toggle de Vista */}
       <div className="flex items-center justify-between">
@@ -754,238 +852,232 @@ export default function SongLibrary({
                 )}
               </div>
 
-              {/* Información */}
-              <div className="p-4 space-y-3">
-                {/* Título y menú */}
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-bold text-zinc-900 dark:text-white text-lg line-clamp-2 flex-1">
-                    {song.title}
-                  </h3>
-                  
-                  {/* Menú de opciones */}
-                  <div className="relative">
-                    <button
-                      onClick={() => setOpenMenuId(openMenuId === song.id ? null : song.id)}
-                      className="p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-white/10 transition-colors text-zinc-600 dark:text-gray-400"
-                    >
-                      <MoreVertical className="w-5 h-5" />
-                    </button>
-                    
-                    {openMenuId === song.id && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-zinc-300 dark:border-white/10 overflow-hidden z-50">
-                        <button
-                          onClick={() => {
-                            onToggleFavorite(song.id);
-                            setOpenMenuId(null);
-                          }}
-                          className="w-full px-4 py-3 text-left text-zinc-800 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors flex items-center gap-2 font-medium"
-                        >
-                          <Heart className={`w-4 h-4 ${song.is_favorite ? 'fill-current text-pink-500' : 'text-zinc-500 dark:text-white'}`} />
-                          {song.is_favorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
-                        </button>
-                        <button
-                          onClick={() => {
-                            onRegenerate(song);
-                            setOpenMenuId(null);
-                          }}
-                          className="w-full px-4 py-3 text-left text-zinc-800 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors flex items-center gap-2 font-medium"
-                        >
-                          <RefreshCw className="w-4 h-4 text-zinc-500 dark:text-white" />
-                          Regenerar similar
-                        </button>
-                        {needsCover(song) && (
-                          <button
-                            onClick={async () => {
-                              setOpenMenuId(null);
-                              const userId = (song as any).user_id;
-                              try {
-                                const response = await fetch('/api/generate-cover', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({
-                                    songId: song.id,
-                                    title: song.title,
-                                    genre: song.genre,
-                                    mood: song.mood || 'energetic',
-                                    userId: userId,
-                                  }),
-                                });
-                                const data = await response.json();
-                                if (data.success) {
-                                  alert('✅ Cover generándose! Aparecerá en 10-30 segundos.');
-                                  setTimeout(() => window.location.reload(), 3000);
-                                } else {
-                                  alert('❌ Error: ' + data.error);
-                                }
-                              } catch (error) {
-                                alert('❌ Error generando cover');
-                              }
-                            }}
-                            className="w-full px-4 py-3 text-left text-purple-400 hover:bg-purple-500/10 transition-colors flex items-center gap-2"
-                          >
-                            <Music className="w-4 h-4" />
-                            Generar Cover con IA
-                          </button>
-                        )}
-                        {/* Opción Añadir a Canal (Solo Admin/Editor) */}
-                        {(userRole === 'admin' || userRole === 'editor') && userChannels.length > 0 && (
-                          <>
-                            <div className="border-t border-zinc-200 dark:border-white/10 my-1" />
-                            <div className="px-4 py-2 text-xs font-semibold text-zinc-500 dark:text-gray-500 uppercase">
-                              Añadir a Canal
-                            </div>
-                            {userChannels.map(channel => (
-                              <button
-                                key={channel.id}
-                                onClick={() => handleAddToChannel(song.id, channel.id)}
-                                className="w-full px-4 py-2 text-left text-zinc-800 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors flex items-center gap-2 text-sm"
-                              >
-                                <Radio className="w-3 h-3" />
-                                {channel.name}
-                              </button>
-                            ))}
-                            <div className="border-t border-zinc-200 dark:border-white/10 my-1" />
-                          </>
-                        )}
+               {/* Información */}
+               <div className="p-4 space-y-3">
+                 {/* Título */}
+                 <h3 className="font-bold text-zinc-900 dark:text-white text-lg line-clamp-2">
+                   {song.title}
+                 </h3>
 
-                        <button
-                          onClick={() => {
-                            if (onEdit) {
-                              onEdit(song);
-                            }
-                            setOpenMenuId(null);
-                          }}
-                          className="w-full px-4 py-3 text-left text-white hover:bg-white/10 transition-colors flex items-center gap-2"
-                        >
-                          <Edit className="w-4 h-4" />
-                          Editar con IA
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm('¿Estás seguro de eliminar esta canción?')) {
-                              onDelete(song.id);
-                              setOpenMenuId(null);
-                            }
-                          }}
-                          className="w-full px-4 py-3 text-left text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-2"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          Eliminar
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                 {/* Género */}
+                 <div className="inline-block px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-xs font-medium">
+                   {song.genre}
+                 </div>
 
-                {/* Género */}
-                <div className="inline-block px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-xs font-medium">
-                  {song.genre}
-                </div>
+                 {/* Metadata */}
+                 <div className="flex items-center justify-between text-xs text-gray-400">
+                   <div className="flex items-center gap-1">
+                     <Clock className="w-3 h-3" />
+                     {song.duration ? formatDuration(song.duration) : '--:--'}
+                   </div>
+                   <div className="flex items-center gap-1">
+                     <Calendar className="w-3 h-3" />
+                     {formatDate(song.created_at)}
+                   </div>
+                   <div className="flex items-center gap-1">
+                     <Play className="w-3 h-3" />
+                     {song.play_count}
+                   </div>
+                 </div>
 
-                {/* Metadata */}
-                <div className="flex items-center justify-between text-xs text-gray-400">
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    {song.duration ? formatDuration(song.duration) : '--:--'}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Calendar className="w-3 h-3" />
-                    {formatDate(song.created_at)}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Play className="w-3 h-3" />
-                    {song.play_count}
-                  </div>
-                </div>
+                 {/* Botones de acción */}
+                 <div className="space-y-2 pt-2">
+                   {/* Barra de progreso (solo si está reproduciendo esta canción) */}
+                   {currentlyPlaying === song.id && (
+                     <div className="space-y-1">
+                       {/* Barra interactiva */}
+                       <div 
+                         ref={progressBarRef}
+                         onMouseDown={handleMouseDown}
+                         onMouseMove={handleMouseMove}
+                         onMouseUp={handleMouseUp}
+                         onMouseLeave={handleMouseUp}
+                         className="w-full h-2 bg-white/10 rounded-full cursor-pointer hover:h-3 transition-all relative group"
+                       >
+                         <div 
+                           className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all relative pointer-events-none"
+                           style={{ 
+                             width: (() => {
+                               // Prioridad 1: duration del state
+                               if (duration && isFinite(duration)) {
+                                 return `${(currentTime / duration) * 100}%`;
+                               }
+                               // Prioridad 2: seekable del audio
+                               if (audioRef.current?.seekable && audioRef.current.seekable.length > 0) {
+                                 const seekableDuration = audioRef.current.seekable.end(0);
+                                 if (isFinite(seekableDuration)) {
+                                   return `${(currentTime / seekableDuration) * 100}%`;
+                                 }
+                               }
+                               // Sin información: 0%
+                               return '0%';
+                             })()
+                           }}
+                         >
+                           <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+                         </div>
+                       </div>
+                       
+                       {/* Tiempos */}
+                       <div className="flex justify-between text-xs text-zinc-400">
+                         <span>{formatDuration(Math.floor(currentTime))}</span>
+                         <span>
+                           {duration && isFinite(duration) 
+                             ? formatDuration(duration)
+                             : (audioRef.current?.seekable && audioRef.current.seekable.length > 0)
+                               ? formatDuration(audioRef.current.seekable.end(0))
+                               : '--:--'
+                           }
+                         </span>
+                       </div>
+                     </div>
+                   )}
 
-                {/* Prompt (truncado) - ELIMINADO DE GRID VIEW para limpieza */}
-                {/* <p className="text-sm text-gray-400 line-clamp-2">
-                  {song.prompt}
-                </p> */}
+                   {/* Botón Play/Pause principal */}
+                   <button
+                     onClick={() => handlePlayPause(song)}
+                     className="w-full py-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium transition-all flex items-center justify-center gap-2"
+                   >
+                     {currentlyPlaying === song.id && isAudioPlaying ? (
+                       <>
+                         <Pause className="w-4 h-4" />
+                         Pausar
+                       </>
+                     ) : (
+                       <>
+                         <Play className="w-4 h-4" />
+                         Reproducir
+                       </>
+                     )}
+                   </button>
 
-                {/* Botones de acción */}
-                <div className="space-y-2 pt-2">
-                  {/* Barra de progreso (solo si está reproduciendo esta canción) */}
-                  {currentlyPlaying === song.id && (
-                    <div className="space-y-1">
-                      {/* Barra interactiva */}
-                      <div 
-                        ref={progressBarRef}
-                        onMouseDown={handleMouseDown}
-                        onMouseMove={handleMouseMove}
-                        onMouseUp={handleMouseUp}
-                        onMouseLeave={handleMouseUp}
-                        className="w-full h-2 bg-white/10 rounded-full cursor-pointer hover:h-3 transition-all relative group"
-                      >
-                        <div 
-                          className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all relative pointer-events-none"
-                          style={{ 
-                            width: (() => {
-                              // Prioridad 1: duration del state
-                              if (duration && isFinite(duration)) {
-                                return `${(currentTime / duration) * 100}%`;
-                              }
-                              // Prioridad 2: seekable del audio
-                              if (audioRef.current?.seekable && audioRef.current.seekable.length > 0) {
-                                const seekableDuration = audioRef.current.seekable.end(0);
-                                if (isFinite(seekableDuration)) {
-                                  return `${(currentTime / seekableDuration) * 100}%`;
-                                }
-                              }
-                              // Sin información: 0%
-                              return '0%';
-                            })()
-                          }}
-                        >
-                          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </div>
-                      </div>
-                      
-                      {/* Tiempos */}
-                      <div className="flex justify-between text-xs text-zinc-400">
-                        <span>{formatDuration(Math.floor(currentTime))}</span>
-                        <span>
-                          {duration && isFinite(duration) 
-                            ? formatDuration(duration)
-                            : (audioRef.current?.seekable && audioRef.current.seekable.length > 0)
-                              ? formatDuration(audioRef.current.seekable.end(0))
-                              : '--:--'
-                          }
-                        </span>
-                      </div>
-                    </div>
-                  )}
+                   {/* Botones de acción secundarios */}
+                   <div className="grid grid-cols-3 gap-1">
+                     {/* Favorito */}
+                     <button
+                       onClick={() => onToggleFavorite(song.id)}
+                       className={`p-2 rounded-lg transition-colors text-xs font-medium ${song.is_favorite ? 'bg-pink-500/20 text-pink-400' : 'bg-white/10 text-gray-400 hover:bg-white/20'}`}
+                       title={song.is_favorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
+                     >
+                       <Heart className={`w-4 h-4 mx-auto ${song.is_favorite ? 'fill-current' : ''}`} />
+                     </button>
 
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handlePlayPause(song)}
-                      className="flex-1 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium transition-all flex items-center justify-center gap-2"
-                    >
-                      {currentlyPlaying === song.id && isAudioPlaying ? (
-                        <>
-                          <Pause className="w-4 h-4" />
-                          Pausar
-                        </>
-                      ) : (
-                        <>
-                          <Play className="w-4 h-4" />
-                          Reproducir
-                        </>
-                      )}
-                    </button>
-                    
-                    {song.audio_url && (
-                      <button
-                        onClick={() => handleDownload(song.audio_url!, song.title)}
-                        className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all flex items-center justify-center"
-                        title="Descargar MP3"
-                      >
-                        <Download className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
+                     {/* Descargar */}
+                     {song.audio_url && (
+                       <button
+                         onClick={() => handleDownload(song.audio_url!, song.title)}
+                         className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-gray-400 transition-all"
+                         title="Descargar MP3"
+                       >
+                         <Download className="w-4 h-4 mx-auto" />
+                       </button>
+                     )}
+
+                     {/* Regenerar */}
+                     <button
+                       onClick={() => onRegenerate(song)}
+                       className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-gray-400 transition-all"
+                       title="Regenerar similar"
+                     >
+                       <RefreshCw className="w-4 h-4 mx-auto" />
+                     </button>
+                   </div>
+
+                   {/* Botones adicionales: Añadir a Canal, Editar, Eliminar */}
+                   <div className="grid grid-cols-3 gap-1">
+                     {/* Añadir a Canal (Admin/Editor) */}
+                     {(userRole === 'admin' || userRole === 'editor') && userChannels.length > 0 && (
+                       <div className="relative col-span-3">
+                         <button
+                           onClick={() => setOpenMenuId(openMenuId === song.id ? null : song.id)}
+                           className="w-full p-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-all text-xs font-medium flex items-center justify-center gap-1"
+                         >
+                           <Radio className="w-3 h-3" />
+                           Añadir a Canal
+                         </button>
+                         
+                         {/* Dropdown de canales */}
+                         {openMenuId === song.id && (
+                           <div className="absolute bottom-full left-0 right-0 mb-1 bg-white dark:bg-gray-900 rounded-lg shadow-2xl border-2 border-blue-200 dark:border-blue-800 overflow-hidden z-50 max-h-40 overflow-y-auto">
+                             {userChannels.map(channel => (
+                               <button
+                                 key={channel.id}
+                                 onClick={() => {
+                                   handleAddToChannel(song.id, channel.id);
+                                   setOpenMenuId(null);
+                                 }}
+                                 className="w-full px-3 py-2 text-left text-zinc-800 dark:text-white hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors flex items-center gap-2 text-xs border-b border-zinc-100 dark:border-zinc-800 last:border-0"
+                               >
+                                 <Radio className="w-3 h-3 text-blue-500 flex-shrink-0" />
+                                 <span className="font-medium truncate">{channel.name}</span>
+                               </button>
+                             ))}
+                           </div>
+                         )}
+                       </div>
+                     )}
+
+                     {/* Editar */}
+                     {onEdit && (
+                       <button
+                         onClick={() => onEdit(song)}
+                         className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-gray-400 transition-all"
+                         title="Editar con IA"
+                       >
+                         <Edit className="w-4 h-4 mx-auto" />
+                       </button>
+                     )}
+
+                     {/* Generar Cover (si falta) */}
+                     {needsCover(song) && (
+                       <button
+                         onClick={async () => {
+                           const userId = (song as any).user_id;
+                           try {
+                             const response = await fetch('/api/generate-cover', {
+                               method: 'POST',
+                               headers: { 'Content-Type': 'application/json' },
+                               body: JSON.stringify({
+                                 songId: song.id,
+                                 title: song.title,
+                                 genre: song.genre,
+                                 mood: song.mood || 'energetic',
+                                 userId: userId,
+                               }),
+                             });
+                             const data = await response.json();
+                             if (data.success) {
+                               alert('✅ Cover generándose!');
+                               setTimeout(() => window.location.reload(), 3000);
+                             } else {
+                               alert('❌ Error: ' + data.error);
+                             }
+                           } catch (error) {
+                             alert('❌ Error generando cover');
+                           }
+                         }}
+                         className="p-2 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 transition-all"
+                         title="Generar Cover"
+                       >
+                         <Music className="w-4 h-4 mx-auto" />
+                       </button>
+                     )}
+
+                     {/* Eliminar */}
+                     <button
+                       onClick={() => {
+                         if (confirm('¿Estás seguro de eliminar esta canción?')) {
+                           onDelete(song.id);
+                         }
+                       }}
+                       className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all"
+                       title="Eliminar"
+                     >
+                       <Trash2 className="w-4 h-4 mx-auto" />
+                     </button>
+                   </div>
+                 </div>
+               </div>
             </div>
           ))}
         </div>
@@ -1127,9 +1219,9 @@ export default function SongLibrary({
               )}
 
               {/* SECCIÓN BOTONES: Debajo en móvil / Derecha en desktop */}
-              <div className="flex items-center justify-end w-full sm:w-auto gap-2 pt-3 sm:pt-0 border-t border-zinc-100 dark:border-white/5 sm:border-0 mt-1 sm:mt-0">
+              <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2 pt-3 sm:pt-0 border-t border-zinc-100 dark:border-white/5 sm:border-0 mt-1 sm:mt-0">
                  
-                 {/* BOTONES PRINCIPALES (más accesibles) */}
+                 {/* Grupo Izquierdo (Móvil) / Principal */}
                  <div className="flex items-center gap-2">
                     {/* Favorito */}
                     <button
@@ -1150,117 +1242,77 @@ export default function SongLibrary({
                         <Download className="w-5 h-5" />
                       </button>
                     )}
+
+                    {/* Regenerar */}
+                    <button
+                      onClick={() => onRegenerate(song)}
+                      className="p-2.5 rounded-lg bg-zinc-50 dark:bg-white/5 hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-400 dark:text-gray-400 hover:text-zinc-900 dark:hover:text-white transition-colors border border-zinc-200 dark:border-white/5"
+                      title="Regenerar similar"
+                    >
+                      <RefreshCw className="w-5 h-5" />
+                    </button>
                  </div>
 
-                 {/* MENÚ DE OPCIONES (3 puntos) - MÁS GRANDE Y VISIBLE */}
-                 <div className="relative">
+                 {/* Grupo Derecho (Acciones Extra) */}
+                 <div className="flex items-center gap-2 pl-2 border-l border-zinc-200 dark:border-white/10">
+                    {/* Cover Gen */}
+                    {needsCover(song) && (
+                      <button
+                        onClick={async () => {
+                          const userId = (song as any).user_id;
+                          try {
+                            const response = await fetch('/api/generate-cover', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                songId: song.id,
+                                title: song.title,
+                                genre: song.genre,
+                                mood: song.mood || 'energetic',
+                                userId: userId,
+                              }),
+                            });
+                            const data = await response.json();
+                            if (data.success) {
+                              alert('✅ Cover generándose! Aparecerá en 10-30 segundos.');
+                              setTimeout(() => window.location.reload(), 3000);
+                            } else {
+                              alert('❌ Error: ' + data.error);
+                            }
+                          } catch (error) {
+                            alert('❌ Error generando cover');
+                          }
+                        }}
+                        className="p-2.5 rounded-lg bg-purple-50 dark:bg-purple-600/20 hover:bg-purple-100 dark:hover:bg-purple-600/30 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-500/30 transition-colors"
+                        title="Generar Cover con IA"
+                      >
+                        <Music className="w-5 h-5" />
+                      </button>
+                    )}
+
+                    {/* Editar */}
+                    {onEdit && (
+                      <button
+                        onClick={() => onEdit(song)}
+                        className="p-2.5 rounded-lg bg-zinc-50 dark:bg-white/5 hover:bg-zinc-100 dark:hover:bg-white/10 text-zinc-400 dark:text-gray-400 hover:text-zinc-900 dark:hover:text-white transition-colors border border-zinc-200 dark:border-white/5"
+                        title="Editar con IA"
+                      >
+                        <Edit className="w-5 h-5" />
+                      </button>
+                    )}
+
+                    {/* Eliminar */}
                     <button
-                      onClick={() => setOpenMenuId(openMenuId === song.id ? null : song.id)}
-                      className="p-3 rounded-lg bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border-2 border-blue-200 dark:border-blue-500/30 transition-all hover:scale-105 shadow-sm"
-                      title="Más opciones"
+                      onClick={() => {
+                        if (confirm('¿Estás seguro de eliminar esta canción?')) {
+                          onDelete(song.id);
+                        }
+                      }}
+                      className="p-2.5 rounded-lg bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-500 dark:text-red-400 border border-red-200 dark:border-red-500/20 transition-colors"
+                      title="Eliminar"
                     >
-                      <MoreVertical className="w-6 h-6" />
+                      <Trash2 className="w-5 h-5" />
                     </button>
-                      
-                      {/* MENÚ DROPDOWN (COPIA EXACTA DEL GRID VIEW) */}
-                      {openMenuId === song.id && (
-                        <div className="absolute right-0 bottom-full mb-2 w-64 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border-2 border-blue-200 dark:border-blue-700 overflow-hidden z-[100]">
-                          {/* Regenerar */}
-                          <button
-                            onClick={() => {
-                              onRegenerate(song);
-                              setOpenMenuId(null);
-                            }}
-                            className="w-full px-5 py-3 text-left text-zinc-800 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors flex items-center gap-3 font-medium border-b border-zinc-100 dark:border-white/5"
-                          >
-                            <RefreshCw className="w-5 h-5 text-blue-500" />
-                            <span>Regenerar similar</span>
-                          </button>
-                          
-                          {/* Generar Cover */}
-                          {needsCover(song) && (
-                            <button
-                              onClick={async () => {
-                                setOpenMenuId(null);
-                                const userId = (song as any).user_id;
-                                try {
-                                  const response = await fetch('/api/generate-cover', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                      songId: song.id,
-                                      title: song.title,
-                                      genre: song.genre,
-                                      mood: song.mood || 'energetic',
-                                      userId: userId,
-                                    }),
-                                  });
-                                  const data = await response.json();
-                                  if (data.success) {
-                                    alert('✅ Cover generándose! Aparecerá en 10-30 segundos.');
-                                    setTimeout(() => window.location.reload(), 3000);
-                                  } else {
-                                    alert('❌ Error: ' + data.error);
-                                  }
-                                } catch (error) {
-                                  alert('❌ Error generando cover');
-                                }
-                              }}
-                              className="w-full px-5 py-3 text-left text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors flex items-center gap-3 font-medium border-b border-zinc-100 dark:border-white/5"
-                            >
-                              <Music className="w-5 h-5" />
-                              <span>Generar Cover</span>
-                            </button>
-                          )}
-
-                          {/* Opción Añadir a Canal (Solo Admin/Editor) */}
-                          {(userRole === 'admin' || userRole === 'editor') && userChannels.length > 0 && (
-                            <>
-                              <div className="px-5 py-2 text-xs font-bold text-zinc-500 dark:text-gray-400 uppercase bg-zinc-50 dark:bg-white/5 border-b border-zinc-100 dark:border-white/5">
-                                📻 Añadir a Canal
-                              </div>
-                              {userChannels.map(channel => (
-                                <button
-                                  key={channel.id}
-                                  onClick={() => handleAddToChannel(song.id, channel.id)}
-                                  className="w-full px-5 py-3 text-left text-zinc-800 dark:text-white hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors flex items-center gap-3 border-b border-zinc-100 dark:border-white/5"
-                                >
-                                  <Radio className="w-4 h-4 text-blue-500" />
-                                  <span className="font-medium">{channel.name}</span>
-                                </button>
-                              ))}
-                            </>
-                          )}
-
-                          {/* Editar */}
-                          <button
-                            onClick={() => {
-                              if (onEdit) onEdit(song);
-                              setOpenMenuId(null);
-                            }}
-                            className="w-full px-5 py-3 text-left text-zinc-800 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors flex items-center gap-3 border-b border-zinc-100 dark:border-white/5"
-                          >
-                            <Edit className="w-5 h-5 text-amber-500" />
-                            <span>Editar</span>
-                          </button>
-
-                          {/* Eliminar */}
-                          <button
-                            onClick={() => {
-                              if (confirm('¿Estás seguro de eliminar esta canción?')) {
-                                onDelete(song.id);
-                                setOpenMenuId(null);
-                              }
-                            }}
-                            className="w-full px-5 py-3 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-3 font-medium"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                            <span>Eliminar</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
                  </div>
               </div>
             </div>
