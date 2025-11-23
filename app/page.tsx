@@ -7,9 +7,10 @@ import MusicGeneratorPro from '@/components/MusicGeneratorPro';
 import SongLibrary from '@/components/SongLibrary';
 import SongEditor from '@/components/SongEditor';
 import MusicPlayer from '@/components/MusicPlayer';
+import ChannelManager from '@/components/ChannelManager';
 import ThemeToggle from '@/components/ThemeToggle';
 import { Song, UserRole } from '@/types';
-import { Sparkles, Music2, Settings, LogOut, Shield, User, Radio } from 'lucide-react';
+import { Sparkles, Music2, Settings, LogOut, Shield, User, Radio, ListMusic } from 'lucide-react';
 
 export default function MainApp() {
   const router = useRouter();
@@ -18,10 +19,10 @@ export default function MainApp() {
   const [isLoading, setIsLoading] = useState(true);
   
   // Recuperar última pestaña activa del localStorage
-  const [activeTab, setActiveTab] = useState<'generator' | 'library' | 'player' | 'editor'>(() => {
+  const [activeTab, setActiveTab] = useState<'generator' | 'library' | 'player' | 'editor' | 'channels'>(() => {
     if (typeof window !== 'undefined') {
       const savedTab = localStorage.getItem('ondeon-active-tab');
-      return (savedTab as 'generator' | 'library' | 'player' | 'editor') || 'generator';
+      return (savedTab as 'generator' | 'library' | 'player' | 'editor' | 'channels') || 'generator';
     }
     return 'generator';
   });
@@ -328,6 +329,19 @@ export default function MainApp() {
                 <Music2 className="w-5 h-5" />
                 Biblioteca ({songs.length})
               </button>
+              {(userProfile?.role === 'admin' || userProfile?.role === 'editor') && (
+                <button
+                  onClick={() => setActiveTab('channels')}
+                  className={`px-6 py-3 rounded-md font-medium transition-all flex items-center justify-center md:justify-start gap-2 border ${
+                    activeTab === 'channels'
+                      ? 'bg-blue-600 text-white border-blue-500'
+                      : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 border-zinc-300 dark:border-zinc-700'
+                  }`}
+                >
+                  <ListMusic className="w-5 h-5" />
+                  Canales
+                </button>
+              )}
             </>
           )}
           <button
@@ -377,6 +391,10 @@ export default function MainApp() {
             userRole={userProfile?.role}
             onToggleFavorite={handleToggleFavorite}
           />
+        )}
+
+        {activeTab === 'channels' && (userProfile?.role === 'admin' || userProfile?.role === 'editor') && (
+          <ChannelManager userRole={userProfile?.role} />
         )}
       </div>
     </div>
