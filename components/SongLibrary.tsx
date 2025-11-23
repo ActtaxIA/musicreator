@@ -507,27 +507,27 @@ export default function SongLibrary({
   return (
     <div className="space-y-6">
       {/* Controles y Filtros */}
-      <div className="bg-white dark:bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-zinc-200 dark:border-transparent">
+      <div className="bg-white dark:bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-zinc-200 dark:border-transparent shadow-sm dark:shadow-none transition-all duration-200">
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           {/* Barra de búsqueda */}
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400 dark:text-gray-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar por título o descripción..."
-              className="w-full pl-10 pr-4 py-3 rounded-lg bg-gray-100 dark:bg-white/5 text-zinc-900 dark:text-white border border-zinc-300 dark:border-white/10 focus:border-blue-500 dark:focus:border-purple-500 focus:ring-2 focus:ring-blue-500 dark:focus:ring-purple-500 outline-none"
+              className="w-full pl-10 pr-4 py-3 rounded-lg bg-gray-50 dark:bg-white/5 text-zinc-900 dark:text-white border border-zinc-300 dark:border-white/10 focus:border-blue-500 dark:focus:border-purple-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-purple-500 outline-none transition-colors placeholder-zinc-400 dark:placeholder-zinc-500"
             />
           </div>
 
           {/* Botón de favoritos */}
           <button
             onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-            className={`px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2 ${
+            className={`px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2 border ${
               showFavoritesOnly
-                ? 'bg-gradient-to-r from-pink-500 to-red-500 text-white'
-                : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                ? 'bg-pink-50 dark:bg-gradient-to-r from-pink-500 to-red-500 text-pink-600 dark:text-white border-pink-200 dark:border-transparent'
+                : 'bg-gray-50 dark:bg-white/5 text-zinc-600 dark:text-gray-300 border-zinc-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 hover:border-zinc-300'
             }`}
           >
             <Heart className={`w-5 h-5 ${showFavoritesOnly ? 'fill-current' : ''}`} />
@@ -537,10 +537,10 @@ export default function SongLibrary({
           {/* NUEVO: Botón para filtrar canciones sin cover */}
           <button
             onClick={() => setShowNoCover(!showNoCover)}
-            className={`px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2 ${
+            className={`px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2 border ${
               showNoCover
-                ? 'bg-gradient-to-r from-orange-500 to-yellow-500 text-white'
-                : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                ? 'bg-orange-50 dark:bg-gradient-to-r from-orange-500 to-yellow-500 text-orange-600 dark:text-white border-orange-200 dark:border-transparent'
+                : 'bg-gray-50 dark:bg-white/5 text-zinc-600 dark:text-gray-300 border-zinc-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 hover:border-zinc-300'
             }`}
           >
             <Filter className={`w-5 h-5`} />
@@ -551,12 +551,12 @@ export default function SongLibrary({
           <button
             onClick={generateCoversInBulk}
             disabled={isGeneratingCovers || songs.filter(s => needsCover(s) && s.status === 'complete').length === 0}
-            className={`px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2 ${
+            className={`px-6 py-3 rounded-lg font-medium transition-all flex items-center gap-2 border ${
               isGeneratingCovers
-                ? 'bg-gray-600 text-gray-300 cursor-not-allowed'
+                ? 'bg-purple-100 dark:bg-gray-600 text-purple-700 dark:text-gray-300 border-purple-200 dark:border-transparent cursor-wait'
                 : songs.filter(s => needsCover(s) && s.status === 'complete').length === 0
-                ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white shadow-lg hover:scale-105'
+                ? 'bg-gray-100 dark:bg-gray-700 text-zinc-400 dark:text-gray-400 border-zinc-200 dark:border-transparent cursor-not-allowed'
+                : 'bg-purple-600 hover:bg-purple-700 text-white border-purple-600 shadow-lg hover:scale-105'
             }`}
           >
             {isGeneratingCovers ? (
@@ -579,16 +579,16 @@ export default function SongLibrary({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Filtro por género */}
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">Género</label>
+            <label className="block text-sm font-medium text-zinc-500 dark:text-gray-400 mb-2">Género</label>
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-gray-400" />
+              <Filter className="w-4 h-4 text-zinc-400 dark:text-gray-400" />
               <select
                 value={selectedGenre}
                 onChange={(e) => setSelectedGenre(e.target.value)}
-                className="flex-1 px-4 py-2 rounded-lg bg-zinc-800 text-white border border-white/10 focus:border-purple-500 focus:ring-2 focus:ring-purple-500 outline-none [&>option]:bg-zinc-800 [&>option]:text-white"
+                className="flex-1 px-4 py-3 rounded-lg bg-gray-50 dark:bg-zinc-800 text-zinc-900 dark:text-white border border-zinc-300 dark:border-white/10 focus:border-blue-500 dark:focus:border-purple-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-purple-500 outline-none transition-colors cursor-pointer"
               >
                 {genres.map(genre => (
-                  <option key={genre} value={genre}>
+                  <option key={genre} value={genre} className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white">
                     {genre === 'all' ? 'Todos los géneros' : genre.charAt(0).toUpperCase() + genre.slice(1)}
                   </option>
                 ))}
