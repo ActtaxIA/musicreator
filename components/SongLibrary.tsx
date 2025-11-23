@@ -665,10 +665,10 @@ export default function SongLibrary({
           {paginatedSongs.map((song) => (
             <div
               key={song.id}
-              className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-xl overflow-hidden hover:shadow-2xl transition-all border border-white/10 hover:border-white/20 group"
+              className="bg-white dark:bg-white/5 backdrop-blur-lg rounded-xl overflow-hidden hover:shadow-2xl transition-all border border-zinc-200 dark:border-white/10 hover:border-blue-400 dark:hover:border-white/20 group"
             >
               {/* Imagen/Artwork */}
-              <div className="relative aspect-square bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
+              <div className="relative aspect-square bg-gray-100 dark:bg-white/5 flex items-center justify-center">
                 {song.image_url && !needsCover(song) ? (
                   <img 
                     src={song.image_url} 
@@ -684,10 +684,8 @@ export default function SongLibrary({
                   <img 
                     src="/placeholder-album.svg" 
                     alt="Generando cover..." 
-                    className="w-full h-full object-contain p-8" 
+                    className="w-full h-full object-contain p-8 opacity-50" 
                   />
-                )}
-                  <Music className="w-20 h-20 text-white/30" />
                 )}
                 
                 {/* Botón de reproducir superpuesto */}
@@ -704,7 +702,7 @@ export default function SongLibrary({
 
                 {/* Badge de favorito */}
                 {song.is_favorite && (
-                  <div className="absolute top-3 right-3 bg-pink-500 rounded-full p-2">
+                  <div className="absolute top-3 right-3 bg-pink-500 rounded-full p-2 shadow-lg">
                     <Heart className="w-4 h-4 text-white fill-current" />
                   </div>
                 )}
@@ -714,7 +712,7 @@ export default function SongLibrary({
               <div className="p-4 space-y-3">
                 {/* Título y menú */}
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-bold text-white text-lg line-clamp-2 flex-1">
+                  <h3 className="font-bold text-zinc-900 dark:text-white text-lg line-clamp-2 flex-1">
                     {song.title}
                   </h3>
                   
@@ -722,21 +720,21 @@ export default function SongLibrary({
                   <div className="relative">
                     <button
                       onClick={() => setOpenMenuId(openMenuId === song.id ? null : song.id)}
-                      className="p-1 rounded-lg hover:bg-white/10 transition-colors"
+                      className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
                     >
-                      <MoreVertical className="w-5 h-5 text-gray-400" />
+                      <MoreVertical className="w-5 h-5 text-zinc-500 dark:text-gray-400" />
                     </button>
                     
                     {openMenuId === song.id && (
-                      <div className="absolute right-0 mt-2 w-48 bg-gray-900 rounded-lg shadow-xl border border-white/10 overflow-hidden z-50">
+                      <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-zinc-200 dark:border-white/10 overflow-hidden z-50">
                         <button
                           onClick={() => {
                             onToggleFavorite(song.id);
                             setOpenMenuId(null);
                           }}
-                          className="w-full px-4 py-3 text-left text-white hover:bg-white/10 transition-colors flex items-center gap-2"
+                          className="w-full px-4 py-3 text-left text-zinc-700 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors flex items-center gap-2"
                         >
-                          <Heart className={`w-4 h-4 ${song.is_favorite ? 'fill-current' : ''}`} />
+                          <Heart className={`w-4 h-4 ${song.is_favorite ? 'fill-current text-pink-500' : ''}`} />
                           {song.is_favorite ? 'Quitar de favoritos' : 'Añadir a favoritos'}
                         </button>
                         <button
@@ -744,7 +742,7 @@ export default function SongLibrary({
                             onRegenerate(song);
                             setOpenMenuId(null);
                           }}
-                          className="w-full px-4 py-3 text-left text-white hover:bg-white/10 transition-colors flex items-center gap-2"
+                          className="w-full px-4 py-3 text-left text-zinc-700 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-colors flex items-center gap-2"
                         >
                           <RefreshCw className="w-4 h-4" />
                           Regenerar similar

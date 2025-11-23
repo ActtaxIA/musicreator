@@ -871,20 +871,20 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
 
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="bg-zinc-900 rounded-lg border border-zinc-800 shadow-2xl">
+      <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-2xl transition-colors duration-200">
         {/* Header */}
-        <div className="border-b border-zinc-800 p-6">
+        <div className="border-b border-zinc-200 dark:border-zinc-800 p-6">
           <div className="flex items-center gap-3">
-            <Music className="w-6 h-6 text-blue-500" />
-            <h2 className="text-2xl font-bold text-white">Generador de Música IA</h2>
+            <Music className="w-6 h-6 text-blue-600 dark:text-blue-500" />
+            <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Generador de Música IA</h2>
           </div>
-          <p className="text-zinc-400 mt-1">Configura los parámetros y genera tu música</p>
+          <p className="text-zinc-600 dark:text-zinc-400 mt-1">Configura los parámetros y genera tu música</p>
         </div>
 
         <div className="p-6 space-y-6">
           {/* Género Musical */}
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-3">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">
               1. Elige tu género musical
             </label>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
@@ -895,7 +895,7 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
                   className={`px-4 py-2.5 rounded-md font-medium text-sm transition-all ${
                     selectedGenre === genre.value
                       ? 'bg-blue-600 text-white border-blue-500'
-                      : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 border-zinc-700'
+                      : 'bg-gray-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-700 border-zinc-200 dark:border-zinc-700'
                   } border`}
                 >
                   {genre.label}
@@ -906,7 +906,7 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
 
           {/* Estado de Ánimo */}
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-3">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">
               2. ¿Qué sentimiento quieres transmitir?
             </label>
             <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
@@ -917,7 +917,7 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
                   className={`px-4 py-2.5 rounded-md font-medium text-sm transition-all ${
                     selectedMood === mood.value
                       ? 'bg-blue-600 text-white border-blue-500'
-                      : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 border-zinc-700'
+                      : 'bg-gray-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-700 border-zinc-200 dark:border-zinc-700'
                   } border`}
                 >
                   {mood.label}
@@ -928,7 +928,7 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
 
           {/* Estilo/Era - NUEVO */}
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-3">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">
               3. ¿Qué estilo/época prefieres?
             </label>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
@@ -939,7 +939,7 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
                   className={`px-4 py-2.5 rounded-md font-medium text-sm transition-all ${
                     selectedStyle === style.value
                       ? 'bg-purple-600 text-white border-purple-500'
-                      : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 border-zinc-700'
+                      : 'bg-gray-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-700 border-zinc-200 dark:border-zinc-700'
                   } border`}
                 >
                   {style.label}
@@ -952,14 +952,14 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
           <div className="grid md:grid-cols-2 gap-6">
             {/* Tempo */}
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-2">
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                 4. Tempo (BPM - Beats Per Minute)
               </label>
-              <div className="bg-zinc-800 p-4 rounded-lg border border-zinc-700">
+              <div className="bg-gray-100 dark:bg-zinc-800 p-4 rounded-lg border border-zinc-200 dark:border-zinc-700">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs text-zinc-400">Lento (60)</span>
-                  <span className="text-lg font-bold text-white">{tempo} BPM</span>
-                  <span className="text-xs text-zinc-400">Rápido (200)</span>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">Lento (60)</span>
+                  <span className="text-lg font-bold text-zinc-900 dark:text-white">{tempo} BPM</span>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">Rápido (200)</span>
                 </div>
                 <input
                   type="range"
@@ -967,21 +967,21 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
                   max="200"
                   value={tempo}
                   onChange={(e) => setTempo(parseInt(e.target.value))}
-                  className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                  className="w-full h-2 bg-zinc-300 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
                 />
               </div>
             </div>
 
             {/* Energía */}
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-2">
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                 5. Energía
               </label>
-              <div className="bg-zinc-800 p-4 rounded-lg border border-zinc-700">
+              <div className="bg-gray-100 dark:bg-zinc-800 p-4 rounded-lg border border-zinc-200 dark:border-zinc-700">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs text-zinc-400">Suave</span>
-                  <span className="text-lg font-bold text-white">{energy}%</span>
-                  <span className="text-xs text-zinc-400">Alta</span>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">Suave</span>
+                  <span className="text-lg font-bold text-zinc-900 dark:text-white">{energy}%</span>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">Alta</span>
                 </div>
                 <input
                   type="range"
@@ -989,7 +989,7 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
                   max="100"
                   value={energy}
                   onChange={(e) => setEnergy(parseInt(e.target.value))}
-                  className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                  className="w-full h-2 bg-zinc-300 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
                 />
               </div>
             </div>
@@ -997,7 +997,7 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
 
           {/* Tipo de Voz */}
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-3">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">
               6. Tipo de voz
             </label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -1008,7 +1008,7 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
                   className={`px-4 py-2.5 rounded-md font-medium text-sm transition-all ${
                     voiceType === voice.value
                       ? 'bg-blue-600 text-white border-blue-500'
-                      : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 border-zinc-700'
+                      : 'bg-gray-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-700 border-zinc-200 dark:border-zinc-700'
                   } border`}
                 >
                   {voice.label}
@@ -1020,7 +1020,7 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
           {/* Idioma de la letra */}
           {voiceType !== 'instrumental' && (
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-3">
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">
                 7. Idioma de la letra
               </label>
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
@@ -1031,7 +1031,7 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
                     className={`px-3 py-2 rounded-md font-medium text-sm transition-all ${
                       selectedLanguage === lang.value
                         ? 'bg-blue-600 text-white border-blue-500'
-                        : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 border-zinc-700'
+                        : 'bg-gray-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-700 border-zinc-200 dark:border-zinc-700'
                     } border`}
                   >
                     {lang.label}
@@ -1042,33 +1042,33 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
           )}
 
           {/* Nota sobre duración */}
-          <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
-            <p className="text-sm text-zinc-400">
+          <div className="bg-blue-50 dark:bg-zinc-800/50 border border-blue-200 dark:border-zinc-700 rounded-lg p-4">
+            <p className="text-sm text-blue-700 dark:text-zinc-400">
               ℹ️ <strong>Duración:</strong> La IA genera canciones de aproximadamente <strong>2-2.5 minutos</strong> según la estructura musical. Para canciones más largas, usa la función "Extend" en el editor después de generar.
             </p>
           </div>
 
           {/* Prompt Personalizado */}
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
               💡 Añade detalles extra (opcional)
             </label>
             <textarea
               value={customPrompt}
               onChange={(e) => setCustomPrompt(e.target.value)}
               placeholder="Ej: Canción sobre un viaje al mar, con saxofón, recuerdos de verano..."
-              className="w-full p-3 rounded-md bg-zinc-800 text-white border border-zinc-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none"
+              className="w-full p-3 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white border border-zinc-300 dark:border-zinc-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none placeholder-zinc-400 dark:placeholder-zinc-500"
               rows={3}
             />
-            <p className="text-xs text-zinc-500 mt-1">
+            <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-1">
               Describe la temática, lírica o características adicionales. Se combinará con los parámetros seleccionados.
             </p>
           </div>
 
           {/* Preview del Prompt */}
-          <div className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4">
-            <div className="text-xs text-zinc-400 mb-1">Prompt generado:</div>
-            <div className="text-sm text-zinc-200 font-mono">{buildPrompt()}</div>
+          <div className="bg-gray-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-lg p-4">
+            <div className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">Prompt generado:</div>
+            <div className="text-sm text-zinc-700 dark:text-zinc-200 font-mono">{buildPrompt()}</div>
           </div>
 
           {/* Botón Generar */}
@@ -1077,7 +1077,7 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
             disabled={loading}
             className={`w-full py-4 rounded-lg font-semibold text-base transition-all flex items-center justify-center gap-2 ${
               loading
-                ? 'bg-zinc-700 cursor-not-allowed text-zinc-400'
+                ? 'bg-gray-300 dark:bg-zinc-700 cursor-not-allowed text-zinc-500 dark:text-zinc-400'
                 : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
             }`}
           >

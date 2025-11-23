@@ -36,25 +36,25 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-blue-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-purple-900 dark:via-black dark:to-blue-900 flex items-center justify-center p-4 transition-colors duration-500">
       <div className="w-full max-w-md">
         {/* Logo/Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <Sparkles className="w-12 h-12 text-purple-400" />
+            <Sparkles className="w-12 h-12 text-purple-600 dark:text-purple-400" />
           </div>
-          <h1 className="text-4xl font-bold text-white mb-2">
-            Suno Music Generator
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+            Narciso Music Generator
           </h1>
-          <p className="text-gray-400">Herramienta Interna - Acceso Restringido</p>
+          <p className="text-gray-500 dark:text-gray-400">Herramienta Interna - Acceso Restringido</p>
         </div>
 
         {/* Login Form */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
+        <div className="bg-white dark:bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-gray-200 dark:border-white/20 shadow-xl dark:shadow-none">
           <form onSubmit={handleLogin} className="space-y-6">
             {/* Email */}
             <div>
-              <label className="block text-white font-medium mb-2">
+              <label className="block text-gray-700 dark:text-white font-medium mb-2">
                 Email
               </label>
               <div className="relative">
@@ -65,14 +65,14 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="tu@email.com"
                   required
-                  className="w-full pl-10 pr-4 py-3 rounded-lg bg-white/5 text-white border border-white/10 focus:border-purple-500 focus:ring-2 focus:ring-purple-500 outline-none"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white border border-gray-300 dark:border-white/10 focus:border-purple-500 focus:ring-2 focus:ring-purple-500 outline-none transition-colors"
                 />
               </div>
             </div>
 
             {/* Password */}
             <div>
-              <label className="block text-white font-medium mb-2">
+              <label className="block text-gray-700 dark:text-white font-medium mb-2">
                 Contraseña
               </label>
               <div className="relative">
@@ -83,15 +83,15 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full pl-10 pr-4 py-3 rounded-lg bg-white/5 text-white border border-white/10 focus:border-purple-500 focus:ring-2 focus:ring-purple-500 outline-none"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg bg-gray-50 dark:bg-white/5 text-gray-900 dark:text-white border border-gray-300 dark:border-white/10 focus:border-purple-500 focus:ring-2 focus:ring-purple-500 outline-none transition-colors"
                 />
               </div>
             </div>
 
             {/* Error Message */}
             {error && (
-              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
-                <p className="text-red-400 text-sm">{error}</p>
+              <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-lg p-3">
+                <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
               </div>
             )}
 
@@ -99,7 +99,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
             >
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -113,11 +113,11 @@ export default function LoginPage() {
           </form>
 
           {/* Info */}
-          <div className="mt-6 pt-6 border-t border-white/10">
-            <p className="text-gray-400 text-sm text-center">
+          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-white/10">
+            <p className="text-gray-500 dark:text-gray-400 text-sm text-center">
               🔒 Sistema privado. Solo usuarios autorizados.
             </p>
-            <p className="text-gray-500 text-xs text-center mt-2">
+            <p className="text-gray-400 dark:text-gray-500 text-xs text-center mt-2">
               ¿No tienes acceso? Contacta al administrador.
             </p>
           </div>
@@ -125,8 +125,8 @@ export default function LoginPage() {
 
         {/* Footer Info */}
         <div className="mt-8 text-center">
-          <p className="text-gray-500 text-sm">
-            © 2025 Suno Music Generator - Herramienta Interna
+          <p className="text-gray-400 dark:text-gray-500 text-sm">
+            © 2025 Narciso Music Generator - Herramienta Interna
           </p>
         </div>
       </div>
