@@ -400,74 +400,130 @@ export default function MusicPlayer({ songs, userId, userRole, onToggleFavorite 
       const audio = audioRef.current;
       if (!audio) return;
 
-      // Actualizar metadata
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: currentSong.title,
-        artist: currentSong.genre || 'Narciso Music Generator',
-        album: currentSong.mood || 'Generated Music',
-        artwork: currentSong.image_url ? [
-          { src: currentSong.image_url, sizes: '512x512', type: 'image/jpeg' }
-        ] : []
-      });
+      try {
+        // Actualizar metadata con información completa
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: currentSong.title || 'Sin título',
+          artist: currentSong.genre || 'Narciso Music Generator',
+          album: currentSong.mood || 'Generated Music',
+          artwork: currentSong.image_url ? [
+            { src: currentSong.image_url, sizes: '96x96', type: 'image/jpeg' },
+            { src: currentSong.image_url, sizes: '128x128', type: 'image/jpeg' },
+            { src: currentSong.image_url, sizes: '192x192', type: 'image/jpeg' },
+            { src: currentSong.image_url, sizes: '256x256', type: 'image/jpeg' },
+            { src: currentSong.image_url, sizes: '384x384', type: 'image/jpeg' },
+            { src: currentSong.image_url, sizes: '512x512', type: 'image/jpeg' }
+          ] : [
+            { src: '/icon.svg', sizes: '512x512', type: 'image/svg+xml' }
+          ]
+        });
 
-      // Configurar action handlers
-      navigator.mediaSession.setActionHandler('play', () => {
-        setIsPlaying(true);
-      });
-
-      navigator.mediaSession.setActionHandler('pause', () => {
-        setIsPlaying(false);
-      });
-
-      navigator.mediaSession.setActionHandler('previoustrack', () => {
-        handlePrevious();
-      });
-
-      navigator.mediaSession.setActionHandler('nexttrack', () => {
-        handleNext();
-      });
-
-      navigator.mediaSession.setActionHandler('seekbackward', (details) => {
-        const skipTime = details.seekOffset || 10;
-        audio.currentTime = Math.max(audio.currentTime - skipTime, 0);
-      });
-
-      navigator.mediaSession.setActionHandler('seekforward', (details) => {
-        const skipTime = details.seekOffset || 10;
-        audio.currentTime = Math.min(audio.currentTime + skipTime, audio.duration);
-      });
-
-      // Actualizar posición (para la barra de progreso del sistema)
-      const updatePositionState = () => {
-        if ('setPositionState' in navigator.mediaSession && audio.duration && isFinite(audio.duration)) {
-          try {
-            navigator.mediaSession.setPositionState({
-              duration: audio.duration,
-              playbackRate: audio.playbackRate,
-              position: audio.currentTime
-            });
-          } catch (error) {
-            console.log('Error updating position state:', error);
+        // Configurar action handlers (SIEMPRE, incluso si hay una sola canción)
+        navigator.mediaSession.setActionHandler('play', () => {
+          console.log('Media Session: Play');
+          const audio = audioRef.current;
+          if (audio) {
+            audio.play();
+            setIsPlaying(true);
           }
-        }
-      };
+        });
 
-      // Actualizar posición cada segundo
-      const positionInterval = setInterval(updatePositionState, 1000);
+        navigator.mediaSession.setActionHandler('pause', () => {
+          console.log('Media Session: Pause');
+          const audio = audioRef.current;
+          if (audio) {
+            audio.pause();
+            setIsPlaying(false);
+          }
+        });
 
-      return () => {
-        clearInterval(positionInterval);
-        // Limpiar handlers al desmontar
-        if ('mediaSession' in navigator) {
+        // CRÍTICO: Configurar previoustrack y nexttrack SIEMPRE para iOS
+        // Incluso si hay una sola canción, iOS necesita ver que los handlers existen
+        navigator.mediaSession.setActionHandler('previoustrack', () => {
+          console.log('Media Session: Previous Track');
+          handlePrevious();
+        });
+
+        navigator.mediaSession.setActionHandler('nexttrack', () => {
+          console.log('Media Session: Next Track');
+          handleNext();
+        });
+
+        // Seek handlers (retroceder/avanzar 10 segundos)
+        navigator.mediaSession.setActionHandler('seekbackward', (details) => {
+          console.log('Media Session: Seek Backward');
+          const audio = audioRef.current;
+          if (audio) {
+            const skipTime = details.seekOffset || 10;
+            audio.currentTime = Math.max(audio.currentTime - skipTime, 0);
+          }
+        });
+
+        navigator.mediaSession.setActionHandler('seekforward', (details) => {
+          console.log('Media Session: Seek Forward');
+          const audio = audioRef.current;
+          if (audio) {
+            const skipTime = details.seekOffset || 10;
+            audio.currentTime = Math.min(audio.currentTime + skipTime, audio.duration);
+          }
+        });
+
+        // Seek to (para la barra de progreso táctil)
+        navigator.mediaSession.setActionHandler('seekto', (details) => {
+          console.log('Media Session: Seek To', details.seekTime);
+          const audio = audioRef.current;
+          if (audio && details.seekTime !== null && details.seekTime !== undefined) {
+            audio.currentTime = details.seekTime;
+            setCurrentTime(details.seekTime);
+          }
+        });
+
+        // Actualizar playback state
+        navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+
+        // Actualizar posición (para la barra de progreso del sistema)
+        const updatePositionState = () => {
+          if ('setPositionState' in navigator.mediaSession && audio.duration && isFinite(audio.duration)) {
+            try {
+              navigator.mediaSession.setPositionState({
+                duration: audio.duration,
+                playbackRate: audio.playbackRate,
+                position: Math.min(audio.currentTime, audio.duration)
+              });
+            } catch (error) {
+              // Ignorar errores de posición (puede pasar si el audio está cargando)
+            }
+          }
+        };
+
+        // Actualizar posición inmediatamente y cada segundo
+        updatePositionState();
+        const positionInterval = setInterval(updatePositionState, 1000);
+
+        return () => {
+          clearInterval(positionInterval);
+        };
+      } catch (error) {
+        console.error('Error setting up Media Session:', error);
+      }
+    }
+
+    // Cleanup al desmontar o cambiar de canción
+    return () => {
+      if ('mediaSession' in navigator) {
+        try {
           navigator.mediaSession.setActionHandler('play', null);
           navigator.mediaSession.setActionHandler('pause', null);
           navigator.mediaSession.setActionHandler('previoustrack', null);
           navigator.mediaSession.setActionHandler('nexttrack', null);
           navigator.mediaSession.setActionHandler('seekbackward', null);
           navigator.mediaSession.setActionHandler('seekforward', null);
+          navigator.mediaSession.setActionHandler('seekto', null);
+        } catch (error) {
+          // Ignorar errores al limpiar
         }
-      };
-    }
+      }
+    };
   }, [currentSong, isPlaying, handleNext, handlePrevious]);
 
   const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
