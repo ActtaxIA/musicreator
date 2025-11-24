@@ -28,3 +28,4 @@ using (
 create index if not exists channel_songs_channel_id_idx on public.channel_songs(channel_id);
 create index if not exists channel_songs_song_id_idx on public.channel_songs(song_id);
 
+

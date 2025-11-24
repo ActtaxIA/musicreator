@@ -18,18 +18,38 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
+      console.log('🔐 Intentando login con Supabase...');
+      console.log('📍 Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error de Supabase:', error);
+        throw error;
+      }
 
+      console.log('✅ Login exitoso:', data.user?.email);
+      
       // Redirigir a la app
       router.push('/');
     } catch (error: any) {
-      console.error('Error logging in:', error);
-      setError(error.message || 'Error al iniciar sesión. Verifica tus credenciales.');
+      console.error('❌ Error completo:', error);
+      
+      // Manejo específico de errores
+      let errorMessage = 'Error al iniciar sesión. Verifica tus credenciales.';
+      
+      if (error.message?.includes('fetch')) {
+        errorMessage = '🌐 Error de conexión con Supabase. Verifica tu conexión a internet o las variables de entorno.';
+      } else if (error.message?.includes('Invalid login credentials')) {
+        errorMessage = '🔑 Email o contraseña incorrectos.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

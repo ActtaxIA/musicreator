@@ -12,3 +12,4 @@ JOIN auth.users u ON u.id = r.user_id
 WHERE u.email = 'narciso.pardo@outlook.com';
 
 
+

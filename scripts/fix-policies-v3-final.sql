@@ -34,3 +34,4 @@ CREATE POLICY "Admins can insert roles" ON public.user_roles
   FOR INSERT WITH CHECK (public.is_admin());
 
 
+

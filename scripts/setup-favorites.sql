@@ -24,3 +24,4 @@ ON CONFLICT DO NOTHING;
 -- ALTER TABLE public.songs DROP COLUMN is_favorite; -- (Ejecutar más adelante si se desea limpiar)
 
 
+

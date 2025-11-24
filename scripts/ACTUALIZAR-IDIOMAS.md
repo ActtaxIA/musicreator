@@ -56,3 +56,4 @@ Todas las **nuevas canciones** se guardarán automáticamente con el idioma corr
 - 🔒 No modifica canciones que ya tienen idioma asignado
 
 
+
