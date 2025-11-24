@@ -108,6 +108,8 @@ export async function POST(request: Request) {
   try {
     const { email, password, role } = await request.json();
 
+    console.log('📝 Creating user:', { email, role });
+
     if (!email || !password || !role) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
@@ -117,16 +119,26 @@ export async function POST(request: Request) {
     }
 
     // 1. Crear usuario en Auth
+    console.log('1️⃣ Creating user in Auth...');
     const { data: { user }, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true // Confirmar automáticamente
     });
 
-    if (createError) throw createError;
-    if (!user) throw new Error('Failed to create user');
+    if (createError) {
+      console.error('❌ Error creating user in Auth:', createError);
+      throw createError;
+    }
+    if (!user) {
+      console.error('❌ User creation returned null');
+      throw new Error('Failed to create user');
+    }
+
+    console.log('✅ User created in Auth:', user.id);
 
     // 2. Asignar rol inmediatamente
+    console.log('2️⃣ Assigning role...');
     const { error: roleError } = await supabaseAdmin
       .from('user_roles')
       .insert({
@@ -135,10 +147,14 @@ export async function POST(request: Request) {
       });
 
     if (roleError) {
+      console.error('❌ Error assigning role:', roleError);
       // Si falla el rol, intentamos borrar el usuario para no dejarlo "huerfano" sin rol (opcional)
+      console.log('🗑️ Cleaning up user due to role error...');
       await supabaseAdmin.auth.admin.deleteUser(user.id);
-      throw roleError;
+      throw new Error(`Database error creating new user: ${roleError.message}`);
     }
+
+    console.log('✅ Role assigned successfully');
 
     return NextResponse.json({ 
       success: true, 
@@ -151,8 +167,10 @@ export async function POST(request: Request) {
     });
 
   } catch (error: any) {
-    console.error('Error creating user:', error);
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    console.error('❌ Error creating user:', error);
+    return NextResponse.json({ 
+      error: error.message || 'Database error creating new user' 
+    }, { status: 500 });
   }
 }
 
