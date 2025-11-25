@@ -449,24 +449,10 @@ export default function MusicPlayer({ songs, userId, userRole, onToggleFavorite 
           handleNext();
         });
 
-        // Seek handlers (retroceder/avanzar 10 segundos)
-        navigator.mediaSession.setActionHandler('seekbackward', (details) => {
-          console.log('Media Session: Seek Backward');
-          const audio = audioRef.current;
-          if (audio) {
-            const skipTime = details.seekOffset || 10;
-            audio.currentTime = Math.max(audio.currentTime - skipTime, 0);
-          }
-        });
-
-        navigator.mediaSession.setActionHandler('seekforward', (details) => {
-          console.log('Media Session: Seek Forward');
-          const audio = audioRef.current;
-          if (audio) {
-            const skipTime = details.seekOffset || 10;
-            audio.currentTime = Math.min(audio.currentTime + skipTime, audio.duration);
-          }
-        });
+        // ❌ DESACTIVAR seek handlers para priorizar botones de cambio de canción
+        // Si estos están activos, iOS/Android muestran ⏪10s y ⏩10s en lugar de ⏮️ y ⏭️
+        navigator.mediaSession.setActionHandler('seekbackward', null);
+        navigator.mediaSession.setActionHandler('seekforward', null);
 
         // Seek to (para la barra de progreso táctil)
         navigator.mediaSession.setActionHandler('seekto', (details) => {
@@ -516,9 +502,8 @@ export default function MusicPlayer({ songs, userId, userRole, onToggleFavorite 
           navigator.mediaSession.setActionHandler('pause', null);
           navigator.mediaSession.setActionHandler('previoustrack', null);
           navigator.mediaSession.setActionHandler('nexttrack', null);
-          navigator.mediaSession.setActionHandler('seekbackward', null);
-          navigator.mediaSession.setActionHandler('seekforward', null);
           navigator.mediaSession.setActionHandler('seekto', null);
+          // seekbackward y seekforward ya están en null, no hace falta limpiarlos
         } catch (error) {
           // Ignorar errores al limpiar
         }
