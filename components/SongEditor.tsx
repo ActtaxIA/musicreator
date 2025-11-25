@@ -244,12 +244,12 @@ export default function SongEditor({ song, onBack, onUpdate }: Props) {
         const response = await axios.get(`/api/status?ids=${taskId}`);
 
         if (response.data.success) {
-          const statusData = response.data.data;
-          const completedSong = statusData.find(
-            (s: any) => s.status === 'complete' && s.audio_url
-          );
-
-          if (completedSong) {
+          const { status, songs } = response.data.data;
+          
+          // Verificar si la extensión está completa
+          if (status === 'SUCCESS' && songs && songs.length > 0) {
+            const completedSong = songs[0]; // Tomar la primera canción de la extensión
+            
             setExtensions(prev =>
               prev.map(ext =>
                 ext.id === taskId
