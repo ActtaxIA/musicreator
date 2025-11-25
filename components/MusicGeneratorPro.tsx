@@ -344,7 +344,6 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
   const [batchVariationType, setBatchVariationType] = useState<'similar' | 'different'>('similar'); // Tipo de variación
   const batchTaskIdsRef = useRef<string[]>([]); // IDs de todas las tareas del batch
   const batchCompletedRef = useRef(0); // Contador de generaciones completadas
-  const taskTitlesRef = useRef<Map<string, string>>(new Map()); // Mapeo taskId → título generado
 
   // Función para añadir log al modal CON actualización inmediata
   const addLog = (message: string) => {
@@ -747,16 +746,9 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
         return;
       }
       
-      // ✅ PRIORIZAR TÍTULO DE SUNO (más coherente con letra real)
-      let correctTitle = song.title || (taskId && taskTitlesRef.current.get(taskId)) || 'Canción sin título';
-      
-      if (song.title && song.title.trim() !== '') {
-        console.log(`📝 Usando título de Suno: "${correctTitle}"`);
-      } else if (taskId && taskTitlesRef.current.has(taskId)) {
-        console.log(`📝 Fallback a nuestro título: "${correctTitle}" (taskId: ${taskId})`);
-      } else {
-        console.warn('⚠️ Sin título, usando fallback: "Canción sin título"');
-      }
+      // ✅ USAR TÍTULO DE SUNO (generado automáticamente por Suno basándose en la letra)
+      const correctTitle = song.title || 'Canción sin título';
+      console.log(`📝 Título: "${correctTitle}" ${song.title ? '(de Suno)' : '(sin título)'}`);
 
       console.log('💾 Guardando canción en Supabase...');
       console.log('📥 URL temporal de SunoAPI:', song.audio_url);
@@ -898,94 +890,6 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
       });
   };
 
-  // Función auxiliar para generar títulos aleatorios inteligentes según IDIOMA y MOOD
-  const generateRandomTheme = (mood: string, language: string): string => {
-    // Bancos de palabras por idioma
-    const themesDB = {
-      // ESPAÑOL
-      spanish: {
-        subjects: {
-          happy: ['La alegría', 'El sol', 'La risa', 'La celebración', 'Los sueños', 'La libertad', 'El vuelo', 'La esperanza', 'La luz', 'El despertar', 'La victoria', 'El triunfo', 'La sonrisa', 'El baile', 'La fiesta'],
-          sad: ['Las lágrimas', 'El adiós', 'La soledad', 'Los recuerdos', 'El silencio', 'La pérdida', 'Las sombras', 'La nostalgia', 'El vacío', 'La melancolía', 'El lamento', 'La tristeza', 'El dolor', 'La ausencia', 'El olvido'],
-          energetic: ['La adrenalina', 'El ritmo', 'La velocidad', 'El impulso', 'La explosión', 'La fuerza', 'El movimiento', 'La intensidad', 'El poder', 'El fuego', 'La tormenta', 'El viento', 'La corriente', 'El trueno', 'La llama'],
-          calm: ['La paz', 'El susurro', 'La calma', 'El refugio', 'La serenidad', 'El descanso', 'La quietud', 'El silencio', 'La brisa', 'El amanecer', 'La luna', 'El remanso', 'La tranquilidad', 'El reposo', 'El sueño'],
-          romantic: ['El amor', 'Los besos', 'El encuentro', 'La pasión', 'Los latidos', 'La entrega', 'El abrazo', 'La mirada', 'El deseo', 'La promesa', 'La ternura', 'El anhelo', 'La conexión', 'El suspiro', 'La caricia'],
-          dreamy: ['Los sueños', 'Las nubes', 'La fantasía', 'El universo', 'Las estrellas', 'La imaginación', 'El infinito', 'El cosmos', 'La ilusión', 'El éter', 'Los mundos', 'El portal', 'La dimensión', 'El viaje', 'La magia'],
-          angry: ['La rabia', 'El grito', 'La tempestad', 'La rebelión', 'El fuego', 'La furia', 'El caos', 'La tormenta', 'La batalla', 'La explosión', 'La ira', 'El rugido', 'La venganza', 'La revuelta', 'El desafío'],
-          mysterious: ['Los secretos', 'Las sombras', 'El enigma', 'Lo oculto', 'El misterio', 'La oscuridad', 'Lo desconocido', 'El velo', 'La niebla', 'El laberinto', 'El acertijo', 'La máscara', 'El espejo', 'La llave', 'El portal'],
-        },
-        actions: {
-          happy: ['que ilumina', 'que brilla', 'que despierta', 'que vuela', 'que libera', 'que celebra', 'que inspira', 'que eleva', 'que florece', 'que resuena', 'que danza', 'que canta', 'que vibra', 'que resplandece', 'que irradia'],
-          sad: ['que se desvanece', 'que llora', 'que susurra', 'que recuerda', 'que se apaga', 'que espera', 'que duele', 'que permanece', 'que se quiebra', 'que se aleja', 'que lamenta', 'que se pierde', 'que solloza', 'que se marchita', 'que muere'],
-          energetic: ['que explota', 'que arde', 'que impulsa', 'que sacude', 'que late', 'que desata', 'que rompe', 'que vibra', 'que despierta', 'que conquista', 'que destroza', 'que impacta', 'que estremece', 'que electrifica', 'que transforma'],
-          calm: ['que acaricia', 'que descansa', 'que fluye', 'que respira', 'que envuelve', 'que calma', 'que arrulla', 'que sana', 'que reconforta', 'que abraza', 'que mece', 'que susurra', 'que acompaña', 'que protege', 'que serena'],
-          romantic: ['que enamora', 'que seduce', 'que une', 'que entrega', 'que late', 'que promete', 'que susurra', 'que acaricia', 'que enciende', 'que perdura', 'que fascina', 'que atrae', 'que envuelve', 'que cautiva', 'que desea'],
-          dreamy: ['que flota', 'que imagina', 'que vuela', 'que brilla', 'que sueña', 'que navega', 'que viaja', 'que danza', 'que contempla', 'que se eleva', 'que explora', 'que descubre', 'que trasciende', 'que ilumina', 'que conecta'],
-          angry: ['que estalla', 'que destruye', 'que arde', 'que grita', 'que rompe', 'que desata', 'que lucha', 'que desafía', 'que arrasa', 'que revienta', 'que derriba', 'que confronta', 'que ataca', 'que pulveriza', 'que rebela'],
-          mysterious: ['que oculta', 'que susurra', 'que revela', 'que esconde', 'que envuelve', 'que intriga', 'que seduce', 'que guarda', 'que insinúa', 'que vela', 'que disimula', 'que descifra', 'que enmascara', 'que descubre', 'que muestra'],
-        },
-        objects: {
-          happy: ['el alma', 'el corazón', 'el mundo', 'los sueños', 'la vida', 'el espíritu', 'el camino', 'el horizonte', 'el destino', 'la esperanza', 'el día', 'la mañana', 'el cielo', 'la tierra', 'el futuro'],
-          sad: ['el alma', 'el pasado', 'los recuerdos', 'el corazón', 'el tiempo', 'el adiós', 'la soledad', 'el silencio', 'la memoria', 'el olvido', 'la noche', 'las heridas', 'el dolor', 'la ausencia', 'el vacío'],
-          energetic: ['la noche', 'el mundo', 'los límites', 'el cielo', 'la tierra', 'el ritmo', 'el pulso', 'la energía', 'la intensidad', 'el momento', 'la multitud', 'el escenario', 'la pista', 'la ciudad', 'el ambiente'],
-          calm: ['el alma', 'el espíritu', 'la mente', 'el corazón', 'el ser', 'la noche', 'el día', 'el tiempo', 'la existencia', 'el presente', 'el jardín', 'el lago', 'el bosque', 'el valle', 'el refugio'],
-          romantic: ['los corazones', 'las almas', 'el destino', 'la eternidad', 'el tiempo', 'la vida', 'el mundo', 'los sentidos', 'el amor', 'los sueños', 'la pasión', 'los momentos', 'las noches', 'los días', 'la intimidad'],
-          dreamy: ['el cielo', 'las estrellas', 'el cosmos', 'la eternidad', 'el infinito', 'el universo', 'los mundos', 'la realidad', 'el espacio', 'el tiempo', 'las galaxias', 'los planetas', 'las dimensiones', 'los portales', 'lo imposible'],
-          angry: ['el mundo', 'las cadenas', 'los muros', 'el sistema', 'las reglas', 'el silencio', 'la opresión', 'los límites', 'el control', 'la injusticia', 'las mentiras', 'la traición', 'el poder', 'la hipocresía', 'la falsedad'],
-          mysterious: ['los secretos', 'la verdad', 'el pasado', 'el misterio', 'lo oculto', 'la realidad', 'el enigma', 'la esencia', 'el velo', 'la sombra', 'el laberinto', 'las puertas', 'el espejo', 'el mensaje', 'el código'],
-        }
-      },
-      // INGLÉS
-      english: {
-        subjects: {
-          happy: ['The joy', 'The sun', 'The laughter', 'The celebration', 'The dreams', 'The freedom', 'The flight', 'The hope', 'The light', 'The awakening', 'The victory', 'The smile', 'The dance', 'The party', 'The glory'],
-          sad: ['The tears', 'The goodbye', 'The loneliness', 'The memories', 'The silence', 'The loss', 'The shadows', 'The nostalgia', 'The emptiness', 'The melancholy', 'The sorrow', 'The pain', 'The absence', 'The void', 'The farewell'],
-          energetic: ['The adrenaline', 'The rhythm', 'The speed', 'The impulse', 'The explosion', 'The force', 'The movement', 'The intensity', 'The power', 'The fire', 'The storm', 'The thunder', 'The lightning', 'The rush', 'The surge'],
-          calm: ['The peace', 'The whisper', 'The calm', 'The shelter', 'The serenity', 'The rest', 'The stillness', 'The silence', 'The breeze', 'The dawn', 'The moon', 'The tranquility', 'The repose', 'The quiet', 'The haven'],
-          romantic: ['The love', 'The kisses', 'The encounter', 'The passion', 'The heartbeats', 'The surrender', 'The embrace', 'The gaze', 'The desire', 'The promise', 'The tenderness', 'The longing', 'The connection', 'The sigh', 'The caress'],
-          dreamy: ['The dreams', 'The clouds', 'The fantasy', 'The universe', 'The stars', 'The imagination', 'The infinity', 'The cosmos', 'The illusion', 'The ether', 'The worlds', 'The portal', 'The dimension', 'The journey', 'The magic'],
-          angry: ['The rage', 'The scream', 'The tempest', 'The rebellion', 'The fire', 'The fury', 'The chaos', 'The storm', 'The battle', 'The explosion', 'The wrath', 'The roar', 'The vengeance', 'The revolt', 'The defiance'],
-          mysterious: ['The secrets', 'The shadows', 'The enigma', 'The hidden', 'The mystery', 'The darkness', 'The unknown', 'The veil', 'The mist', 'The labyrinth', 'The riddle', 'The mask', 'The mirror', 'The key', 'The door'],
-        },
-        actions: {
-          happy: ['that illuminates', 'that shines', 'that awakens', 'that flies', 'that liberates', 'that celebrates', 'that inspires', 'that elevates', 'that blooms', 'that resonates', 'that dances', 'that sings', 'that vibrates', 'that glows', 'that radiates'],
-          sad: ['that fades', 'that cries', 'that whispers', 'that remembers', 'that dims', 'that waits', 'that hurts', 'that remains', 'that breaks', 'that drifts', 'that mourns', 'that loses', 'that sobs', 'that withers', 'that dies'],
-          energetic: ['that explodes', 'that burns', 'that drives', 'that shakes', 'that beats', 'that unleashes', 'that breaks', 'that vibrates', 'that awakens', 'that conquers', 'that destroys', 'that impacts', 'that electrifies', 'that transforms', 'that ignites'],
-          calm: ['that caresses', 'that rests', 'that flows', 'that breathes', 'that envelops', 'that calms', 'that soothes', 'that heals', 'that comforts', 'that embraces', 'that rocks', 'that whispers', 'that accompanies', 'that protects', 'that serenades'],
-          romantic: ['that enamors', 'that seduces', 'that unites', 'that surrenders', 'that beats', 'that promises', 'that whispers', 'that caresses', 'that ignites', 'that endures', 'that fascinates', 'that attracts', 'that captivates', 'that desires', 'that enchants'],
-          dreamy: ['that floats', 'that imagines', 'that flies', 'that shines', 'that dreams', 'that navigates', 'that travels', 'that dances', 'that contemplates', 'that soars', 'that explores', 'that discovers', 'that transcends', 'that illuminates', 'that connects'],
-          angry: ['that explodes', 'that destroys', 'that burns', 'that screams', 'that breaks', 'that unleashes', 'that fights', 'that defies', 'that devastates', 'that bursts', 'that demolishes', 'that confronts', 'that attacks', 'that pulverizes', 'that rebels'],
-          mysterious: ['that hides', 'that whispers', 'that reveals', 'that conceals', 'that envelops', 'that intrigues', 'that seduces', 'that guards', 'that hints', 'that veils', 'that disguises', 'that deciphers', 'that masks', 'that uncovers', 'that shows'],
-        },
-        objects: {
-          happy: ['the soul', 'the heart', 'the world', 'the dreams', 'the life', 'the spirit', 'the path', 'the horizon', 'the destiny', 'the hope', 'the day', 'the morning', 'the sky', 'the earth', 'the future'],
-          sad: ['the soul', 'the past', 'the memories', 'the heart', 'the time', 'the goodbye', 'the loneliness', 'the silence', 'the memory', 'the oblivion', 'the night', 'the wounds', 'the pain', 'the absence', 'the void'],
-          energetic: ['the night', 'the world', 'the limits', 'the sky', 'the earth', 'the rhythm', 'the pulse', 'the energy', 'the intensity', 'the moment', 'the crowd', 'the stage', 'the floor', 'the city', 'the vibe'],
-          calm: ['the soul', 'the spirit', 'the mind', 'the heart', 'the being', 'the night', 'the day', 'the time', 'the existence', 'the present', 'the garden', 'the lake', 'the forest', 'the valley', 'the sanctuary'],
-          romantic: ['the hearts', 'the souls', 'the destiny', 'the eternity', 'the time', 'the life', 'the world', 'the senses', 'the love', 'the dreams', 'the passion', 'the moments', 'the nights', 'the days', 'the intimacy'],
-          dreamy: ['the sky', 'the stars', 'the cosmos', 'the eternity', 'the infinity', 'the universe', 'the worlds', 'the reality', 'the space', 'the time', 'the galaxies', 'the planets', 'the dimensions', 'the portals', 'the impossible'],
-          angry: ['the world', 'the chains', 'the walls', 'the system', 'the rules', 'the silence', 'the oppression', 'the limits', 'the control', 'the injustice', 'the lies', 'the betrayal', 'the power', 'the hypocrisy', 'the falsehood'],
-          mysterious: ['the secrets', 'the truth', 'the past', 'the mystery', 'the hidden', 'the reality', 'the enigma', 'the essence', 'the veil', 'the shadow', 'the labyrinth', 'the doors', 'the mirror', 'the message', 'the code'],
-        }
-      }
-    };
-
-    // Determinar idioma (por defecto inglés si no está en la lista)
-    const langKey = language === 'spanish' ? 'spanish' : 'english';
-    const lang = themesDB[langKey];
-    
-    const moodKey = mood as keyof typeof lang.subjects;
-    const subjectList = lang.subjects[moodKey] || lang.subjects.dreamy;
-    const actionList = lang.actions[moodKey] || lang.actions.dreamy;
-    const objectList = lang.objects[moodKey] || lang.objects.dreamy;
-
-    // Generar índices aleatorios ÚNICOS para cada ejecución
-    const randomSubject = subjectList[Math.floor(Math.random() * subjectList.length)];
-    const randomAction = actionList[Math.floor(Math.random() * actionList.length)];
-    const randomObject = objectList[Math.floor(Math.random() * objectList.length)];
-
-    return `${randomSubject} ${randomAction} ${randomObject}`;
-  };
 
   // Función auxiliar para generar UNA canción (reutilizable para batch)
   const generateSingleMusic = async (batchIndex: number = 0, totalBatch: number = 1) => {
@@ -993,50 +897,26 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
     const batchPrefix = totalBatch > 1 ? `[${batchIndex + 1}/${totalBatch}] ` : '';
     
     try {
-      // NUEVO: Si es batch múltiple, crear variación según el tipo seleccionado
+      // Si el usuario escribió un tema, usarlo (opcional)
       let currentCustomPrompt = customPrompt;
-      let titleSuffix = '';
       
-      if (totalBatch > 1) {
+      if (totalBatch > 1 && customPrompt && customPrompt.trim() !== '') {
+        // Si hay tema del usuario en batch múltiple, añadir variación
         if (batchVariationType === 'similar') {
-          // VARIACIONES SUTILES: Solo cambios en el título, mismo tema
-          if (customPrompt && customPrompt.trim() !== '') {
-            // Si hay tema del usuario, usarlo con variación
-            const variations = ['#1', '#2', '#3', '#4', '#5', 'Remix', 'Extended', 'Acoustic', 'Live', 'Alternate', 'Remaster', 'Version 2', 'Version 3', 'Radio Edit', 'Club Mix'];
-            titleSuffix = ` ${variations[batchIndex % variations.length]}`;
-          } else {
-            // Sin tema del usuario, generar uno aleatorio único para cada canción
-            currentCustomPrompt = generateRandomTheme(selectedMood, selectedLanguage);
-          }
+          // VARIACIONES SUTILES
+          const variations = ['#1', '#2', '#3', '#4', '#5', 'Remix', 'Extended', 'Acoustic', 'Live', 'Alternate', 'Remaster', 'Version 2', 'Version 3', 'Radio Edit', 'Club Mix'];
+          currentCustomPrompt = `${customPrompt} ${variations[batchIndex % variations.length]}`;
         } else {
-          // VARIACIONES DIFERENTES: Temas completamente distintos
-          if (customPrompt && customPrompt.trim() !== '') {
-            // PRIORIDAD 1: Si el usuario escribió un tema, usarlo como base con variación
-            const variations = selectedLanguage === 'spanish' 
-              ? ['parte', 'capítulo', 'momento', 'instante', 'episodio', 'fragmento', 'acto', 'escena', 'etapa', 'fase']
-              : ['part', 'chapter', 'moment', 'instant', 'episode', 'fragment', 'act', 'scene', 'stage', 'phase'];
-            currentCustomPrompt = `${customPrompt} ${variations[batchIndex % variations.length]} ${batchIndex + 1}`;
-          } else {
-            // PRIORIDAD 2: Generar tema aleatorio inteligente con IA en el idioma correcto
-            currentCustomPrompt = generateRandomTheme(selectedMood, selectedLanguage);
-          }
-        }
-      } else {
-        // Batch único (1 generación)
-        if (!customPrompt || customPrompt.trim() === '') {
-          // Sin tema del usuario, generar uno aleatorio
-          currentCustomPrompt = generateRandomTheme(selectedMood, selectedLanguage);
+          // VARIACIONES DIFERENTES
+          const variations = selectedLanguage === 'spanish' 
+            ? ['parte', 'capítulo', 'momento', 'instante', 'episodio', 'fragmento', 'acto', 'escena', 'etapa', 'fase']
+            : ['part', 'chapter', 'moment', 'instant', 'episode', 'fragment', 'act', 'scene', 'stage', 'phase'];
+          currentCustomPrompt = `${customPrompt} ${variations[batchIndex % variations.length]} ${batchIndex + 1}`;
         }
       }
 
       // El prompt generado será el STYLE (descripción del género/estilo)
       const styleDescription = buildPrompt();
-      
-      // NUEVO: Título SOLO con el tema (sin "Género Mood" al inicio)
-      let title = currentCustomPrompt || 'Untitled Song';
-      if (titleSuffix) {
-        title = `${currentCustomPrompt}${titleSuffix}`;
-      }
 
       // Obtener labels para logs
       const genreLabel = GENRES.find(g => g.value === selectedGenre)?.label || selectedGenre;
@@ -1046,7 +926,6 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
       if (batchIndex === 0) { // Solo mostrar detalles en la primera generación
         addLog(`🤖 Modelo IA: ${selectedModel} - ${AI_MODELS.find(m => m.value === selectedModel)?.description}`);
       }
-      addLog(`${batchPrefix}📝 Título: ${title}`);
       // Solo mostrar todos los detalles en la primera generación del batch
       if (batchIndex === 0) {
         addLog(`🎸 Género: ${genreLabel}`);
@@ -1088,12 +967,11 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
         url: '/api/generate',
         data: {
           prompt: styleDescription,        // Descripción del estilo (STYLE)
-          customPrompt: currentCustomPrompt, // MODIFICADO: Usar tema específico de este batch
+          customPrompt: currentCustomPrompt, // Tema específico (opcional)
           make_instrumental: voiceType === 'instrumental',
-          title,
           genre: selectedGenre,
           voiceType,
-          language: selectedLanguage,      // Para generar letras placeholder en el idioma correcto
+          language: selectedLanguage,      // Para generar letras en el idioma correcto
           model: selectedModel,            // Modelo IA seleccionado por el usuario
           // NUEVOS PARÁMETROS AVANZADOS
           vocalGender: vocalGender === 'any' ? undefined : vocalGender, // Solo enviar si está definido
@@ -1108,10 +986,6 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
 
       if (response.data.success && response.data.data.taskId) {
         const taskId = response.data.data.taskId;
-        
-        // ✅ GUARDAR MAPEO: taskId → título (para usarlo al guardar)
-        taskTitlesRef.current.set(taskId, title);
-        
         addLog(`${batchPrefix}✅ Task ID recibido: ${taskId}`);
         return taskId; // Devolver el taskId para procesamiento posterior
       } else {
@@ -1141,7 +1015,6 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
     setError('');
     setBatchProgress({ current: 0, total: batchCount });
     batchCompletedRef.current = 0; // RESETEAR contador de completados
-    taskTitlesRef.current.clear(); // LIMPIAR mapeo de títulos
 
     try {
       addLog(`🎯 Iniciando generación de ${batchCount} lote(s) en paralelo...`);
@@ -1238,8 +1111,8 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
             // Guardar en Supabase
             try {
               for (const song of songs) {
-                // ✅ PRIORIZAR EL TÍTULO DE SUNO (más coherente con el contenido/letra)
-                const correctTitle = song.title || taskTitlesRef.current.get(taskId) || 'Canción sin título';
+                // ✅ USAR TÍTULO DE SUNO (generado automáticamente por Suno)
+                const correctTitle = song.title || 'Canción sin título';
                 addLog(`💾 Guardando: ${correctTitle}...`);
                 
                 try {
