@@ -747,14 +747,15 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
         return;
       }
       
-      // ✅ OBTENER EL TÍTULO CORRECTO DEL MAPEO (si existe)
-      let correctTitle = song.title;
-      if (taskId && taskTitlesRef.current.has(taskId)) {
-        correctTitle = taskTitlesRef.current.get(taskId);
-        console.log(`📝 Usando título del mapeo: "${correctTitle}" (taskId: ${taskId})`);
-      } else if (!song.title || song.title.trim() === '') {
-        correctTitle = 'Canción sin título';
-        console.warn('⚠️ Canción sin título de Suno API, usando fallback');
+      // ✅ PRIORIZAR TÍTULO DE SUNO (más coherente con letra real)
+      let correctTitle = song.title || (taskId && taskTitlesRef.current.get(taskId)) || 'Canción sin título';
+      
+      if (song.title && song.title.trim() !== '') {
+        console.log(`📝 Usando título de Suno: "${correctTitle}"`);
+      } else if (taskId && taskTitlesRef.current.has(taskId)) {
+        console.log(`📝 Fallback a nuestro título: "${correctTitle}" (taskId: ${taskId})`);
+      } else {
+        console.warn('⚠️ Sin título, usando fallback: "Canción sin título"');
       }
 
       console.log('💾 Guardando canción en Supabase...');
@@ -1237,8 +1238,8 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
             // Guardar en Supabase
             try {
               for (const song of songs) {
-                // Obtener el título correcto del mapeo
-                const correctTitle = taskTitlesRef.current.get(taskId) || song.title || 'Canción sin título';
+                // ✅ PRIORIZAR EL TÍTULO DE SUNO (más coherente con el contenido/letra)
+                const correctTitle = song.title || taskTitlesRef.current.get(taskId) || 'Canción sin título';
                 addLog(`💾 Guardando: ${correctTitle}...`);
                 
                 try {
