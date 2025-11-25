@@ -1637,17 +1637,16 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
           </div>
 
           {/* NUEVO: Selector de Generación Múltiple */}
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-zinc-800 dark:to-zinc-900 border border-blue-200 dark:border-zinc-700 rounded-lg p-4">
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-zinc-900 dark:text-white mb-1">
-                  📊 Generación Múltiple en Paralelo
-                </label>
-                <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                  Cantidad de generaciones: <strong>{batchCount}</strong> = <strong className="text-blue-600 dark:text-blue-400">{batchCount * 2} canciones</strong> totales (2 variaciones por generación)
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-zinc-800 dark:to-zinc-900 border border-blue-200 dark:border-zinc-700 rounded-lg p-4 space-y-4">
+            {/* Cantidad de generaciones */}
+            <div>
+              <label className="block text-sm font-semibold text-zinc-900 dark:text-white mb-2">
+                📊 Generación Múltiple en Paralelo
+              </label>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-3">
+                Cantidad: <strong>{batchCount}</strong> generaciones = <strong className="text-blue-600 dark:text-blue-400">{batchCount * 2} canciones</strong> totales
+              </p>
+              <div className="flex items-center gap-2 flex-wrap">
                 {[1, 2, 3, 5, 10].map((count) => (
                   <button
                     key={count}
@@ -1664,50 +1663,60 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
                 ))}
               </div>
             </div>
+
+            {/* Tipo de Variación - SIEMPRE VISIBLE cuando batch > 1 */}
             {batchCount > 1 && (
-              <div className="mt-3 pt-3 border-t border-blue-200 dark:border-zinc-700 space-y-3">
-                <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                  ⚡ <strong>Generación en paralelo:</strong> Todas las canciones se generan simultáneamente para máxima velocidad
-                </p>
-                
-                {/* NUEVO: Selector de Tipo de Variación */}
-                <div>
-                  <label className="block text-sm font-medium text-zinc-900 dark:text-white mb-2">
-                    🎭 Tipo de Variación (Lírica/Título)
+              <>
+                <div className="border-t border-blue-200 dark:border-zinc-700 pt-4">
+                  <label className="block text-sm font-semibold text-zinc-900 dark:text-white mb-2">
+                    🎭 Tipo de Variación
                   </label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-3">
+                    ¿Cómo deben variar las canciones entre sí?
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <button
                       onClick={() => setBatchVariationType('similar')}
                       disabled={loading}
                       className={`px-4 py-3 rounded-md font-medium text-sm transition-all text-left ${
                         batchVariationType === 'similar'
-                          ? 'bg-blue-600 text-white border-blue-500'
-                          : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 border-zinc-300 dark:border-zinc-600'
-                      } border disabled:opacity-50 disabled:cursor-not-allowed`}
+                          ? 'bg-blue-600 text-white border-2 border-blue-400'
+                          : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 border-2 border-zinc-300 dark:border-zinc-600'
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
-                      <div className="font-bold">📝 Parecidas</div>
-                      <div className="text-xs opacity-80 mt-1">Mismo tema, variaciones sutiles en título</div>
+                      <div className="font-bold mb-1">📝 Parecidas</div>
+                      <div className="text-xs opacity-80">Mismo tema, solo cambia el título</div>
+                      <div className="text-xs opacity-60 mt-1">Ej: "Remix", "Extended", "Club Mix"</div>
                     </button>
                     <button
                       onClick={() => setBatchVariationType('different')}
                       disabled={loading}
                       className={`px-4 py-3 rounded-md font-medium text-sm transition-all text-left ${
                         batchVariationType === 'different'
-                          ? 'bg-purple-600 text-white border-purple-500'
-                          : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 border-zinc-300 dark:border-zinc-600'
-                      } border disabled:opacity-50 disabled:cursor-not-allowed`}
+                          ? 'bg-purple-600 text-white border-2 border-purple-400'
+                          : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 border-2 border-zinc-300 dark:border-zinc-600'
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
-                      <div className="font-bold">🎨 Diferentes</div>
-                      <div className="text-xs opacity-80 mt-1">Temas completamente distintos</div>
+                      <div className="font-bold mb-1">🎨 Diferentes</div>
+                      <div className="text-xs opacity-80">Temas y letras distintas</div>
+                      <div className="text-xs opacity-60 mt-1">Cada canción habla de algo diferente</div>
                     </button>
                   </div>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
-                    {batchVariationType === 'similar' 
-                      ? '📌 Género/Mood/Tempo iguales. Solo varía el título (Ej: "Remix", "Extended")'
-                      : '📌 Género/Mood/Tempo iguales. Cada canción tiene tema/lírica diferente'}
+                  <div className="mt-3 p-3 bg-blue-500/10 dark:bg-blue-500/5 rounded-md">
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                      {batchVariationType === 'similar' 
+                        ? '✅ Género/Mood/Tempo iguales. Solo varía el título (versiones del mismo tema)'
+                        : '✅ Género/Mood/Tempo iguales. Cada canción tiene temática/letra diferente'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="border-t border-blue-200 dark:border-zinc-700 pt-3">
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                    ⚡ <strong>Generación en paralelo:</strong> Todas las canciones se generan simultáneamente
                   </p>
                 </div>
-              </div>
+              </>
             )}
           </div>
 
