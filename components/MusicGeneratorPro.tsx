@@ -344,6 +344,7 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
   const [batchVariationType, setBatchVariationType] = useState<'similar' | 'different'>('similar'); // Tipo de variación
   const batchTaskIdsRef = useRef<string[]>([]); // IDs de todas las tareas del batch
   const batchCompletedRef = useRef(0); // Contador de generaciones completadas
+  const taskTitlesRef = useRef<Map<string, string>>(new Map()); // Mapeo taskId → título generado
 
   // Función para añadir log al modal CON actualización inmediata
   const addLog = (message: string) => {
@@ -740,11 +741,21 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
     });
   };
 
-  const saveSongToSupabase = async (song: any) => {
+  const saveSongToSupabase = async (song: any, taskId?: string) => {
     try {
       if (!userId) {
         console.warn('⚠️ No hay userId, no se puede guardar en Supabase');
         return;
+      }
+      
+      // ✅ OBTENER EL TÍTULO CORRECTO DEL MAPEO (si existe)
+      let correctTitle = song.title;
+      if (taskId && taskTitlesRef.current.has(taskId)) {
+        correctTitle = taskTitlesRef.current.get(taskId);
+        console.log(`📝 Usando título del mapeo: "${correctTitle}" (taskId: ${taskId})`);
+      } else if (!song.title || song.title.trim() === '') {
+        correctTitle = 'Canción sin título';
+        console.warn('⚠️ Canción sin título de Suno API, usando fallback');
       }
 
       console.log('💾 Guardando canción en Supabase...');
@@ -810,7 +821,7 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
       // 5. Guardar en la base de datos (sin imagen, se generará después)
       const songData = {
         user_id: userId,
-        title: song.title || 'Canción sin título',
+        title: correctTitle,
         suno_id: song.id,
         audio_url: permanentAudioUrl, // URL permanente o temporal si falló
         image_url: null, // Se generará con DALL-E 3 en segundo plano
@@ -1012,6 +1023,10 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
 
       if (response.data.success && response.data.data.taskId) {
         const taskId = response.data.data.taskId;
+        
+        // ✅ GUARDAR MAPEO: taskId → título (para usarlo al guardar)
+        taskTitlesRef.current.set(taskId, title);
+        
         addLog(`${batchPrefix}✅ Task ID recibido: ${taskId}`);
         return taskId; // Devolver el taskId para procesamiento posterior
       } else {
@@ -1041,6 +1056,7 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
     setError('');
     setBatchProgress({ current: 0, total: batchCount });
     batchCompletedRef.current = 0; // RESETEAR contador de completados
+    taskTitlesRef.current.clear(); // LIMPIAR mapeo de títulos
 
     try {
       addLog(`🎯 Iniciando generación de ${batchCount} lote(s) en paralelo...`);
@@ -1137,13 +1153,15 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
             // Guardar en Supabase
             try {
               for (const song of songs) {
-                addLog(`💾 Guardando: ${song.title}...`);
+                // Obtener el título correcto del mapeo
+                const correctTitle = taskTitlesRef.current.get(taskId) || song.title || 'Canción sin título';
+                addLog(`💾 Guardando: ${correctTitle}...`);
                 
                 try {
-                  await saveSongToSupabase(song);
-                  addLog(`✅ Guardada: ${song.title}`);
+                  await saveSongToSupabase(song, taskId);
+                  addLog(`✅ Guardada: ${correctTitle}`);
                 } catch (saveErr: any) {
-                  addLog(`⚠️ Error guardando ${song.title}: ${saveErr.message}`);
+                  addLog(`⚠️ Error guardando ${correctTitle}: ${saveErr.message}`);
                   addLog(`💡 La canción se guardó con URL temporal`);
                 }
                 
