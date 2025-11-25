@@ -7,11 +7,14 @@
 
 ## 🚀 Características Principales
 
-### 1. Generación Musical Avanzada (Suno v3.5)
+### 1. Generación Musical Avanzada (Suno V5)
+- **Selector de Modelo IA:** Elige entre V5 (recomendado), V4.5+, V4.5, V4 o V3.5.
+  - **V5:** Superior expresión musical, generación más rápida, hasta 8+ minutos.
+  - **Fallback Automático:** Si un modelo falla, prueba automáticamente con la versión anterior.
 - **Control Total:** BPM (Tempo), Energía, Modo Instrumental.
 - **Prompt Engineering:** Sistema inteligente que enriquece tus ideas (ej: "Un rock de los 80s" → "Anthem Rock, 80s style, electric guitars...").
 - **Soporte Multilingüe:** Detección y selección automática del idioma para las letras.
-- **Feedback en Tiempo Real:** Modal de logs que muestra paso a paso el proceso de generación.
+- **Feedback en Tiempo Real:** Modal de logs que muestra paso a paso el proceso de generación, incluyendo el modelo usado.
 
 ### 2. Gestión de Usuarios y Roles (RBAC)
 - **Sistema de Roles:** 
@@ -62,7 +65,7 @@
 - **Frontend:** Next.js 14 (App Router), React, Tailwind CSS, Lucide Icons.
 - **Backend:** Next.js API Routes (con autenticación segura y Service Role).
 - **Base de Datos:** Supabase (PostgreSQL + Storage + Auth + RLS Policies).
-- **IA Musical:** SunoAPI (vía API no oficial).
+- **IA Musical:** SunoAPI V5 (con fallback automático a V4/V3.5).
 - **IA Visual:** OpenAI DALL-E 3.
 
 ---

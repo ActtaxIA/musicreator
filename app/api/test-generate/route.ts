@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
           prompt: testPrompt,
           customMode: false,
           instrumental: false,
-          model: 'V3_5',
+          model: 'V5',  // V5: Superior musical expression, faster generation
           callBackUrl: 'https://webhook.site/unique-url-here' // URL de prueba
         };
       

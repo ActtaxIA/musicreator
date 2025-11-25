@@ -45,7 +45,7 @@ POST https://api.sunoapi.org/api/v1/generate
   "prompt": "mysterious Flamenco, classic traditional authentic style, authentic Spanish flamenco, flamenco guitar with rasgueado and alzapúa technique, palmas 12-beat compás, percussive flamenco cajón, rhythmic zapateado footwork, characteristic quejío vocal cry, medium tempo 93 BPM, intense energy, FEMALE LEAD VOCALS, woman singer, female voice, female vocals, female singer, spanish lyrics, sung in Spanish, letra en español. Theme and lyrics about: amor perdido en el mar",
   "customMode": false,
   "instrumental": false,
-  "model": "V4",
+  "model": "V5",
   "callBackUrl": "https://webhook.site/suno-music-gen"
 }
 ```
@@ -57,7 +57,7 @@ POST https://api.sunoapi.org/api/v1/generate
 | `prompt` | string | Descripción completa del estilo, género, mood, tema (max 500 chars) | "energetic Techno, pure techno with analog synthesizers..." |
 | `customMode` | boolean | **false** = letras auto-generadas, **true** = letras literales | `false` |
 | `instrumental` | boolean | **true** = sin voz, **false** = con voz | `false` |
-| `model` | string | Modelo de IA (V3_5, V4, V4_5, V4_5PLUS, V5) | `"V4"` |
+| `model` | string | Modelo de IA: **V5** (recomendado), V4_5PLUS, V4_5, V4, V3_5 | `"V5"` |
 | `callBackUrl` | string | URL para recibir notificaciones cuando termine | `"https://webhook.site/xxx"` |
 
 ---
@@ -227,8 +227,9 @@ await supabase
 4. **Especificar idioma claramente** - "spanish lyrics, sung in Spanish"
 5. **Añadir detalles técnicos** - "Roland TR-909, 4x4 kick, 140 BPM"
 6. **Especificar BPM Exacto** - "128 BPM" en el prompt funciona mejor que "fast tempo"
-7. **Fallback a V3_5** - Si V4 falla
-8. **Paginar la biblioteca** - Mostrar 20 canciones a la vez
+7. **Usar V5 por defecto** - Es el modelo más rápido y con mejor calidad musical
+8. **Fallback automático** - V5 → V4 → V3_5 si hay problemas
+9. **Paginar la biblioteca** - Mostrar 20 canciones a la vez
 9. **Lazy loading de imágenes** - Cargar solo cuando son visibles
 10. **Memoización funciones** - Usar `useCallback` y `memo` para optimizar
 

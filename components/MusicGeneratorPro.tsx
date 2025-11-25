@@ -119,6 +119,39 @@ const LANGUAGES = [
   { value: 'russian', label: 'Ruso' },
 ];
 
+const AI_MODELS = [
+  { 
+    value: 'V5' as const, 
+    label: 'V5 (Recomendado)', 
+    description: 'Superior expresión musical, más rápido, hasta 8+ min',
+    badge: '🆕'
+  },
+  { 
+    value: 'V4_5PLUS' as const, 
+    label: 'V4.5+', 
+    description: 'Sonido más rico, nuevas técnicas creativas, hasta 8 min',
+    badge: '✨'
+  },
+  { 
+    value: 'V4_5' as const, 
+    label: 'V4.5', 
+    description: 'Mejor mezcla de géneros, hasta 8 min',
+    badge: ''
+  },
+  { 
+    value: 'V4' as const, 
+    label: 'V4', 
+    description: 'Calidad alta, estructura refinada, hasta 4 min',
+    badge: ''
+  },
+  { 
+    value: 'V3_5' as const, 
+    label: 'V3.5', 
+    description: 'Arreglos sólidos, diversidad creativa, hasta 4 min',
+    badge: ''
+  },
+];
+
 interface MusicGeneratorProProps {
   userId?: string;
   onSongGenerated?: () => void;
@@ -134,6 +167,7 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
   const [selectedStyle, setSelectedStyle] = useState('modern'); // NUEVO
   const [voiceType, setVoiceType] = useState('instrumental');
   const [selectedLanguage, setSelectedLanguage] = useState('spanish'); // NUEVO
+  const [selectedModel, setSelectedModel] = useState<'V5' | 'V4_5PLUS' | 'V4_5' | 'V4' | 'V3_5'>('V5'); // NUEVO: Selector de modelo IA
   
   const [loading, setLoading] = useState(false);
   const [songs, setSongs] = useState<Song[]>([]);
@@ -629,6 +663,7 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
       const title = `${genreLabel} ${moodLabel}`;
 
       addLog('🎵 Iniciando generación de música...');
+      addLog(`🤖 Modelo IA: ${selectedModel} - ${AI_MODELS.find(m => m.value === selectedModel)?.description}`);
       addLog(`📝 Título: ${title}`);
       addLog(`🎸 Género: ${genreLabel}`);
       addLog(`😊 Mood: ${moodLabel}`);
@@ -658,6 +693,7 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
           genre: selectedGenre,
           voiceType,
           language: selectedLanguage,      // Para generar letras placeholder en el idioma correcto
+          model: selectedModel,            // NUEVO: Modelo IA seleccionado por el usuario
         },
         headers: {
           'Content-Type': 'application/json',
@@ -872,6 +908,31 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
   return (
     <div className="max-w-6xl mx-auto">
       <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-2xl transition-colors duration-200">
+        {/* Selector de Modelo IA - NUEVO */}
+        <div className="border-b border-zinc-200 dark:border-zinc-800 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-zinc-800 dark:to-zinc-900 px-6 py-3">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                🤖 Modelo de IA:
+              </span>
+              <select
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value as any)}
+                className="px-3 py-1.5 rounded-md text-sm font-medium bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white border border-zinc-300 dark:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer transition-all hover:bg-zinc-50 dark:hover:bg-zinc-700"
+              >
+                {AI_MODELS.map((model) => (
+                  <option key={model.value} value={model.value}>
+                    {model.badge} {model.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 italic">
+              {AI_MODELS.find(m => m.value === selectedModel)?.description}
+            </p>
+          </div>
+        </div>
+
         {/* Header */}
         <div className="border-b border-zinc-200 dark:border-zinc-800 p-6">
           <div className="flex items-center gap-3">

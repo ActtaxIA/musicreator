@@ -10,7 +10,7 @@
   - V4: hasta 4 minutos  
   - V4.5: hasta 8 minutos
   - V4.5+: hasta 8 minutos
-  - **V5: hasta 8+ minutos** (última versión, sept 2025)
+  - **V5: hasta 8+ minutos** ✨ (última versión, más rápido y mejor expresión musical)
 
 ### Conversiones Disponibles
 - **WAV**: Conversión de MP3 a WAV (sin compresión)

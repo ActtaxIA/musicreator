@@ -11,7 +11,8 @@ export async function POST(request: NextRequest) {
       title, 
       genre, 
       voiceType,
-      language = 'spanish'
+      language = 'spanish',
+      model = 'V5'      // Modelo IA seleccionado (default: V5)
     } = body;
 
     const apiKey = process.env.SUNO_API_KEY;
@@ -46,17 +47,24 @@ export async function POST(request: NextRequest) {
     console.log('📤 Enviando a SunoAPI (customMode: false - letras auto-generadas):');
     console.log('  - prompt:', fullPrompt);
     console.log('  - instrumental:', make_instrumental);
+    console.log('  - model:', model);
 
     // Payload según documentación oficial (customMode: false)
     const payload: any = {
       prompt: fullPrompt,
       customMode: false,           // EXPLÍCITO: false para auto-generar letras
       instrumental: make_instrumental,
-      model: 'V4',
+      model: model,                // Modelo seleccionado por el usuario (V5 por defecto)
       callBackUrl: process.env.SUNO_CALLBACK_URL || 'https://webhook.site/suno-music-gen'
     };
 
-    // OPCIÓN 3: Probar con modelo V4 (si está disponible, sino fallback a V3_5)
+    // Determinar modelo fallback según el modelo seleccionado
+    const fallbackModel = model === 'V5' ? 'V4' : 
+                         model === 'V4_5PLUS' ? 'V4_5' :
+                         model === 'V4_5' ? 'V4' :
+                         model === 'V4' ? 'V3_5' : 'V3_5';
+
+    // Probar con el modelo seleccionado (si falla, usar fallback)
     let response;
     try {
       response = await axios.post(
@@ -70,15 +78,15 @@ export async function POST(request: NextRequest) {
           timeout: 60000 // 60 segundos (aumentado)
         }
       );
-      console.log('✅ V4 funcionó correctamente');
-    } catch (v4Error: any) {
-      // Si V4 falla (no disponible), intentar con V3_5
-      console.log('⚠️ V4 no disponible o timeout, intentando con V3_5...');
-      console.log('Error V4:', v4Error.code || v4Error.response?.data || v4Error.message);
+      console.log(`✅ ${model} funcionó correctamente`);
+    } catch (modelError: any) {
+      // Si el modelo falla (no disponible), intentar con fallback
+      console.log(`⚠️ ${model} no disponible o timeout, intentando con ${fallbackModel}...`);
+      console.log(`Error ${model}:`, modelError.code || modelError.response?.data || modelError.message);
       
-      payload.model = 'V3_5';
+      payload.model = fallbackModel;
       try {
-        console.log('🔄 Reintentando con V3_5 y timeout extendido...');
+        console.log(`🔄 Reintentando con ${fallbackModel} y timeout extendido...`);
         response = await axios.post(
           `${baseUrl}/api/v1/generate`,
           payload,
@@ -90,16 +98,16 @@ export async function POST(request: NextRequest) {
             timeout: 60000 // 60 segundos (aumentado)
           }
         );
-        console.log('✅ V3_5 funcionó correctamente');
-      } catch (v3Error: any) {
-        console.error('❌ V3_5 también falló:', v3Error.code || v3Error.response?.data || v3Error.message);
+        console.log(`✅ ${fallbackModel} funcionó correctamente`);
+      } catch (fallbackError: any) {
+        console.error(`❌ ${fallbackModel} también falló:`, fallbackError.code || fallbackError.response?.data || fallbackError.message);
         
         // Si es timeout, dar mensaje más claro
-        if (v3Error.code === 'ETIMEDOUT' || v3Error.code === 'ECONNABORTED') {
+        if (fallbackError.code === 'ETIMEDOUT' || fallbackError.code === 'ECONNABORTED') {
           throw new Error('⏱️ Timeout: SunoAPI no está respondiendo. Puede estar temporalmente caído o sobrecargado. Intenta de nuevo en unos minutos.');
         }
         
-        throw v3Error; // Re-lanzar el error para que lo capture el catch principal
+        throw fallbackError; // Re-lanzar el error para que lo capture el catch principal
       }
     }
 
