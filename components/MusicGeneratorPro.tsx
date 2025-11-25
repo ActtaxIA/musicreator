@@ -338,6 +338,11 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
   const currentTaskIdRef = useRef<string | null>(null);
   const logsRef = useRef<string[]>([]); // REF para logs sin causar re-renders
 
+  // NUEVOS ESTADOS PARA GENERACIÓN MÚLTIPLE
+  const [batchCount, setBatchCount] = useState(1); // Cantidad de generaciones (1-10)
+  const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 }); // Progreso del batch
+  const batchTaskIdsRef = useRef<string[]>([]); // IDs de todas las tareas del batch
+
   // Función para añadir log al modal CON actualización inmediata
   const addLog = (message: string) => {
     const timestamp = new Date().toLocaleTimeString();
@@ -881,19 +886,8 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
       });
   };
 
-  const generateMusic = async () => {
-    if (!selectedGenre && !customPrompt) {
-      setError('Por favor selecciona un género o escribe un prompt personalizado');
-      return;
-    }
-
-    // Abrir modal y resetear logs
-    setIsModalOpen(true);
-    setGenerationLogs([]);
-    setGenerationStatus('generating');
-    setLoading(true);
-    setError('');
-
+  // Función auxiliar para generar UNA canción (reutilizable para batch)
+  const generateSingleMusic = async (batchIndex: number = 0, totalBatch: number = 1) => {
     try {
       // El prompt generado será el STYLE (descripción del género/estilo)
       const styleDescription = buildPrompt();
@@ -903,38 +897,44 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
       const moodLabel = MOODS.find(m => m.value === selectedMood)?.label || selectedMood;
       const title = `${genreLabel} ${moodLabel}`;
 
-      addLog('🎵 Iniciando generación de música...');
-      addLog(`🤖 Modelo IA: ${selectedModel} - ${AI_MODELS.find(m => m.value === selectedModel)?.description}`);
-      addLog(`📝 Título: ${title}`);
-      addLog(`🎸 Género: ${genreLabel}`);
-      addLog(`😊 Mood: ${moodLabel}`);
-      addLog(`🎚️ Tempo: ${tempo} BPM`);
-      addLog(`⚡ Energía: ${energy}%`);
-      addLog(`🎤 Voz: ${voiceType === 'instrumental' ? 'Instrumental' : VOICE_TYPES.find(v => v.value === voiceType)?.label}`);
-      if (voiceType !== 'instrumental') {
-        addLog(`🌍 Idioma: ${LANGUAGES.find(l => l.value === selectedLanguage)?.label}`);
+      const batchPrefix = totalBatch > 1 ? `[${batchIndex + 1}/${totalBatch}] ` : '';
+      addLog(`${batchPrefix}🎵 Iniciando generación de música...`);
+      if (batchIndex === 0) { // Solo mostrar detalles en la primera generación
+        addLog(`🤖 Modelo IA: ${selectedModel} - ${AI_MODELS.find(m => m.value === selectedModel)?.description}`);
       }
-      if (customPrompt) {
-        addLog(`💡 Tema personalizado: ${customPrompt.substring(0, 50)}...`);
+      addLog(`${batchPrefix}📝 Título: ${title}`);
+      // Solo mostrar todos los detalles en la primera generación del batch
+      if (batchIndex === 0) {
+        addLog(`🎸 Género: ${genreLabel}`);
+        addLog(`😊 Mood: ${moodLabel}`);
+        addLog(`🎚️ Tempo: ${tempo} BPM`);
+        addLog(`⚡ Energía: ${energy}%`);
+        addLog(`🎤 Voz: ${voiceType === 'instrumental' ? 'Instrumental' : VOICE_TYPES.find(v => v.value === voiceType)?.label}`);
+        if (voiceType !== 'instrumental') {
+          addLog(`🌍 Idioma: ${LANGUAGES.find(l => l.value === selectedLanguage)?.label}`);
+        }
+        if (customPrompt) {
+          addLog(`💡 Tema personalizado: ${customPrompt.substring(0, 50)}...`);
+        }
+        
+        // NUEVOS LOGS PARA PARÁMETROS AVANZADOS
+        if (longTrack) {
+          addLog(`⏱️ Duración: Canción larga sugerida (8+ min)`);
+        }
+        if (vocalGender !== 'any') {
+          addLog(`🎤 Género vocal: ${vocalGender === 'm' ? 'Masculino' : 'Femenino'}`);
+        }
+        addLog(`🎯 Adherencia al estilo: ${Math.round(styleWeight * 100)}%`);
+        addLog(`🎨 Creatividad: ${Math.round(weirdnessConstraint * 100)}%`);
+        if (negativeTags) {
+          addLog(`🚫 Evitar: ${negativeTags}`);
+        }
+        
+        // Mostrar el prompt completo que se enviará
+        addLog(`📋 Prompt completo: ${styleDescription.substring(0, 100)}...`);
       }
-      
-      // NUEVOS LOGS PARA PARÁMETROS AVANZADOS
-      if (longTrack) {
-        addLog(`⏱️ Duración: Canción larga sugerida (8+ min)`);
-      }
-      if (vocalGender !== 'any') {
-        addLog(`🎤 Género vocal: ${vocalGender === 'm' ? 'Masculino' : 'Femenino'}`);
-      }
-      addLog(`🎯 Adherencia al estilo: ${Math.round(styleWeight * 100)}%`);
-      addLog(`🎨 Creatividad: ${Math.round(weirdnessConstraint * 100)}%`);
-      if (negativeTags) {
-        addLog(`🚫 Evitar: ${negativeTags}`);
-      }
-      
-      // Mostrar el prompt completo que se enviará
-      addLog(`📋 Prompt completo: ${styleDescription.substring(0, 100)}...`);
 
-      addLog('📤 Enviando request a SunoAPI...');
+      addLog(`${batchPrefix}📤 Enviando request a SunoAPI...`);
 
       const response = await axios({
         method: 'POST',
@@ -961,20 +961,62 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
 
       if (response.data.success && response.data.data.taskId) {
         const taskId = response.data.data.taskId;
-        currentTaskIdRef.current = taskId;
-        addLog(`✅ Task ID recibido: ${taskId}`);
-        addLog('⏳ Iniciando seguimiento de estado...');
-        // Usamos el taskId para consultar el estado
-        pollSongStatus(taskId);
+        addLog(`${batchPrefix}✅ Task ID recibido: ${taskId}`);
+        return taskId; // Devolver el taskId para procesamiento posterior
       } else {
-        addLog(`❌ Error: ${response.data.error || 'No se recibió taskId'}`);
-        setError('Error al generar la música: ' + (response.data.error || 'No se recibió taskId'));
-        setLoading(false);
-        setGenerationStatus('error');
+        addLog(`${batchPrefix}❌ Error: ${response.data.error || 'No se recibió taskId'}`);
+        throw new Error(response.data.error || 'No se recibió taskId');
       }
     } catch (err: any) {
       const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || 'Error desconocido al generar música';
-      addLog(`❌ Error en generación: ${errorMessage}`);
+      addLog(`${batchPrefix}❌ Error en generación: ${errorMessage}`);
+      throw err;
+    }
+  };
+
+  // NUEVA FUNCIÓN: Generación Múltiple en Paralelo
+  const generateMusic = async () => {
+    if (!selectedGenre && !customPrompt) {
+      setError('Por favor selecciona un género o escribe un prompt personalizado');
+      return;
+    }
+
+    // Abrir modal y resetear logs
+    setIsModalOpen(true);
+    setGenerationLogs([]);
+    logsRef.current = [];
+    setGenerationStatus('generating');
+    setLoading(true);
+    setError('');
+    setBatchProgress({ current: 0, total: batchCount });
+
+    try {
+      addLog(`🎯 Iniciando generación de ${batchCount} lote(s) en paralelo...`);
+      addLog(`📊 Total de canciones: ${batchCount * 2} (2 variaciones por generación)`);
+      addLog('');
+
+      // Crear array de promesas para ejecutar en paralelo
+      const promises = Array(batchCount).fill(null).map((_, index) => 
+        generateSingleMusic(index, batchCount)
+      );
+
+      // Ejecutar todas las generaciones en paralelo
+      const taskIds = await Promise.all(promises);
+      batchTaskIdsRef.current = taskIds;
+
+      addLog('');
+      addLog(`✅ ${batchCount} generación(es) iniciada(s) correctamente`);
+      addLog(`📋 Task IDs: ${taskIds.join(', ')}`);
+      addLog('⏳ Iniciando seguimiento de todas las canciones...');
+
+      // Iniciar polling para todos los taskIds
+      for (const taskId of taskIds) {
+        pollSongStatus(taskId);
+      }
+
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || 'Error desconocido';
+      addLog(`❌ Error en generación batch: ${errorMessage}`);
       
       setError(`Error al generar música: ${errorMessage}`);
       setLoading(false);
@@ -1522,6 +1564,43 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
             <div className="text-sm text-zinc-700 dark:text-zinc-200 font-mono">{buildPrompt()}</div>
           </div>
 
+          {/* NUEVO: Selector de Generación Múltiple */}
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-zinc-800 dark:to-zinc-900 border border-blue-200 dark:border-zinc-700 rounded-lg p-4">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-zinc-900 dark:text-white mb-1">
+                  📊 Generación Múltiple en Paralelo
+                </label>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                  Cantidad de generaciones: <strong>{batchCount}</strong> = <strong className="text-blue-600 dark:text-blue-400">{batchCount * 2} canciones</strong> totales (2 variaciones por generación)
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {[1, 2, 3, 5, 10].map((count) => (
+                  <button
+                    key={count}
+                    onClick={() => setBatchCount(count)}
+                    disabled={loading}
+                    className={`px-4 py-2 rounded-md font-bold text-sm transition-all ${
+                      batchCount === count
+                        ? 'bg-blue-600 text-white border-blue-500'
+                        : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 border-zinc-300 dark:border-zinc-600'
+                    } border disabled:opacity-50 disabled:cursor-not-allowed`}
+                  >
+                    {count}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {batchCount > 1 && (
+              <div className="mt-3 pt-3 border-t border-blue-200 dark:border-zinc-700">
+                <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                  ⚡ <strong>Generación en paralelo:</strong> Todas las canciones se generan simultáneamente para máxima velocidad
+                </p>
+              </div>
+            )}
+          </div>
+
           {/* Botón Generar */}
           <button
             onClick={generateMusic}
@@ -1535,12 +1614,12 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
             {loading ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                Generando música...
+                Generando {batchCount > 1 ? `${batchCount} lotes...` : 'música...'}
               </>
             ) : (
               <>
                 <Play className="w-5 h-5" />
-                Generar Música
+                {batchCount > 1 ? `Generar ${batchCount * 2} Canciones` : 'Generar Música'}
               </>
             )}
           </button>
