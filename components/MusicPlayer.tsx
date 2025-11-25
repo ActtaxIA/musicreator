@@ -238,6 +238,27 @@ export default function MusicPlayer({ songs, userId, userRole, onToggleFavorite 
     }
   }, [currentSong?.id, currentSong?.audio_url]); // Solo cuando cambia la ID o URL de la canción actual
 
+  // Sincronizar estado isPlaying con el audio (para móvil)
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !currentSong) return;
+
+    if (isPlaying) {
+      // Intentar reproducir (necesario en móvil al cambiar de canción)
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(err => {
+          console.error('Error al reproducir:', err);
+          // Si falla (política de autoplay), no forzar el estado
+          setIsPlaying(false);
+        });
+      }
+    } else {
+      // Pausar si isPlaying es false
+      audio.pause();
+    }
+  }, [isPlaying, currentSong?.id]); // Ejecutar cuando cambia isPlaying o la canción
+
   // Actualizar volumen
   useEffect(() => {
     const audio = audioRef.current;
@@ -554,9 +575,12 @@ export default function MusicPlayer({ songs, userId, userRole, onToggleFavorite 
       // Si es la misma canción y está sonando, pausar
       setIsPlaying(false);
     } else {
-      // Cambiar a la canción seleccionada y reproducir
+      // Cambiar a la canción seleccionada
       setCurrentSongIndex(index);
-      setIsPlaying(true);
+      // Pequeño delay para asegurar que el audio se carga primero (móvil)
+      setTimeout(() => {
+        setIsPlaying(true);
+      }, 50);
     }
   };
 
