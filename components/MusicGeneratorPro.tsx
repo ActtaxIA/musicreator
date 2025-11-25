@@ -937,9 +937,8 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
             'La fuerza de seguir adelante',
           ];
           currentCustomPrompt = themeOptions[batchIndex % themeOptions.length];
-          // Título incluirá primeras palabras del tema
-          const themeWords = currentCustomPrompt.split(' ').slice(0, 3).join(' ');
-          titleSuffix = ` - ${themeWords}`;
+          // Título incluirá el tema completo (para que coincida con las letras)
+          titleSuffix = ` - ${currentCustomPrompt}`;
         }
       }
 
