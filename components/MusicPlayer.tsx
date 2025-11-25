@@ -482,21 +482,12 @@ export default function MusicPlayer({ songs, userId, userRole, onToggleFavorite 
           }
         };
 
-        // Actualizar posición inicialmente
+        // Actualizar posición inmediatamente y cada segundo
         updatePositionState();
-
-        // ✅ OPTIMIZACIÓN: Usar evento timeupdate en lugar de setInterval
-        // Esto reduce consumo de CPU/batería significativamente
-        const onTimeUpdate = () => {
-          // Solo actualizar cada 3 segundos aprox (throttle manual)
-          if (!audio.currentTime || audio.currentTime % 3 < 0.5) {
-            updatePositionState();
-          }
-        };
-        audio.addEventListener('timeupdate', onTimeUpdate);
+        const positionInterval = setInterval(updatePositionState, 1000);
 
         return () => {
-          audio.removeEventListener('timeupdate', onTimeUpdate);
+          clearInterval(positionInterval);
         };
       } catch (error) {
         console.error('Error setting up Media Session:', error);
@@ -559,41 +550,13 @@ export default function MusicPlayer({ songs, userId, userRole, onToggleFavorite 
   };
 
   const playSongAtIndex = (index: number) => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
     if (index === currentSongIndex && isPlaying) {
       // Si es la misma canción y está sonando, pausar
-      audio.pause();
       setIsPlaying(false);
     } else {
-      // Cambiar a la canción seleccionada
+      // Cambiar a la canción seleccionada y reproducir
       setCurrentSongIndex(index);
       setIsPlaying(true);
-      
-      // En móvil, forzar play después de que se cargue el audio
-      // Esto soluciona el problema del doble clic
-      const attemptPlay = () => {
-        if (audio.readyState >= 2) { // HAVE_CURRENT_DATA o mayor
-          audio.play().catch(err => {
-            console.error('Error al reproducir:', err);
-            setIsPlaying(false);
-          });
-        } else {
-          // Si aún no está listo, esperar al evento 'canplay'
-          const onCanPlay = () => {
-            audio.play().catch(err => {
-              console.error('Error al reproducir:', err);
-              setIsPlaying(false);
-            });
-            audio.removeEventListener('canplay', onCanPlay);
-          };
-          audio.addEventListener('canplay', onCanPlay, { once: true });
-        }
-      };
-      
-      // Intentar reproducir después de un pequeño delay (para que se cargue el src)
-      setTimeout(attemptPlay, 100);
     }
   };
 
