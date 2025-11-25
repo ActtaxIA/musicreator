@@ -1228,6 +1228,15 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
           }
         } else {
           addLog('❌ Respuesta sin éxito de la API');
+          // Reintentar aunque la API devuelva error
+          if (attempts < maxAttempts) {
+            setTimeout(checkStatus, 5000);
+          } else {
+            addLog('⏰ Tiempo máximo alcanzado');
+            setError('La API no está respondiendo correctamente');
+            setLoading(false);
+            setGenerationStatus('error');
+          }
         }
       } catch (err: any) {
         // ✅ MANEJO DE ERRORES DE RED
