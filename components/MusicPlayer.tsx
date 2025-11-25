@@ -238,27 +238,6 @@ export default function MusicPlayer({ songs, userId, userRole, onToggleFavorite 
     }
   }, [currentSong?.id, currentSong?.audio_url]); // Solo cuando cambia la ID o URL de la canción actual
 
-  // Sincronizar estado isPlaying con el audio (para móvil)
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio || !currentSong) return;
-
-    if (isPlaying) {
-      // Intentar reproducir (necesario en móvil al cambiar de canción)
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(err => {
-          console.error('Error al reproducir:', err);
-          // Si falla (política de autoplay), no forzar el estado
-          setIsPlaying(false);
-        });
-      }
-    } else {
-      // Pausar si isPlaying es false
-      audio.pause();
-    }
-  }, [isPlaying, currentSong?.id]); // Ejecutar cuando cambia isPlaying o la canción
-
   // Actualizar volumen
   useEffect(() => {
     const audio = audioRef.current;
@@ -571,16 +550,41 @@ export default function MusicPlayer({ songs, userId, userRole, onToggleFavorite 
   };
 
   const playSongAtIndex = (index: number) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
     if (index === currentSongIndex && isPlaying) {
       // Si es la misma canción y está sonando, pausar
+      audio.pause();
       setIsPlaying(false);
     } else {
       // Cambiar a la canción seleccionada
       setCurrentSongIndex(index);
-      // Pequeño delay para asegurar que el audio se carga primero (móvil)
-      setTimeout(() => {
-        setIsPlaying(true);
-      }, 50);
+      setIsPlaying(true);
+      
+      // En móvil, forzar play después de que se cargue el audio
+      // Esto soluciona el problema del doble clic
+      const attemptPlay = () => {
+        if (audio.readyState >= 2) { // HAVE_CURRENT_DATA o mayor
+          audio.play().catch(err => {
+            console.error('Error al reproducir:', err);
+            setIsPlaying(false);
+          });
+        } else {
+          // Si aún no está listo, esperar al evento 'canplay'
+          const onCanPlay = () => {
+            audio.play().catch(err => {
+              console.error('Error al reproducir:', err);
+              setIsPlaying(false);
+            });
+            audio.removeEventListener('canplay', onCanPlay);
+          };
+          audio.addEventListener('canplay', onCanPlay, { once: true });
+        }
+      };
+      
+      // Intentar reproducir después de un pequeño delay (para que se cargue el src)
+      setTimeout(attemptPlay, 100);
     }
   };
 
