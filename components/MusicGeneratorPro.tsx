@@ -537,7 +537,6 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
       'opera': 'operatic vocals, classical singing, dramatic performance, orchestral backing',
       'pop': 'catchy pop melody, mainstream production, radio-friendly, contemporary pop',
       'synth-pop': 'synthesizer-driven pop, electronic melodies, 80s pop influence, synth hooks',
-      'trance': 'uplifting trance, euphoric melodies, emotional breakdown, driving bassline',
       'vaporwave': 'vaporwave aesthetic, slowed samples, 80s nostalgia, surreal atmosphere',
     };
 
@@ -898,8 +897,58 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
       });
   };
 
+  // Función auxiliar para generar títulos aleatorios inteligentes
+  const generateRandomTheme = (mood: string): string => {
+    const subjects = {
+      happy: ['La alegría', 'El sol', 'La risa', 'La celebración', 'Los sueños', 'La libertad', 'El vuelo', 'La esperanza', 'La luz', 'El despertar'],
+      sad: ['Las lágrimas', 'El adiós', 'La soledad', 'Los recuerdos', 'El silencio', 'La pérdida', 'Las sombras', 'La nostalgia', 'El vacío', 'La melancolía'],
+      energetic: ['La adrenalina', 'El ritmo', 'La velocidad', 'El impulso', 'La explosión', 'La fuerza', 'El movimiento', 'La intensidad', 'El poder', 'El fuego'],
+      calm: ['La paz', 'El susurro', 'La calma', 'El refugio', 'La serenidad', 'El descanso', 'La quietud', 'El silencio', 'La brisa', 'El amanecer'],
+      romantic: ['El amor', 'Los besos', 'El encuentro', 'La pasión', 'Los latidos', 'La entrega', 'El abrazo', 'La mirada', 'El deseo', 'La promesa'],
+      dreamy: ['Los sueños', 'Las nubes', 'La fantasía', 'El universo', 'Las estrellas', 'La imaginación', 'El infinito', 'El cosmos', 'La ilusión', 'El éter'],
+      angry: ['La rabia', 'El grito', 'La tempestad', 'La rebelión', 'El fuego', 'La furia', 'El caos', 'La tormenta', 'La batalla', 'La explosión'],
+      mysterious: ['Los secretos', 'Las sombras', 'El enigma', 'Lo oculto', 'El misterio', 'La oscuridad', 'Lo desconocido', 'El velo', 'La niebla', 'El laberinto'],
+    };
+
+    const actions = {
+      happy: ['que ilumina', 'que brilla', 'que despierta', 'que vuela', 'que libera', 'que celebra', 'que inspira', 'que eleva', 'que florece', 'que resuena'],
+      sad: ['que se desvanece', 'que llora', 'que susurra', 'que recuerda', 'que se apaga', 'que espera', 'que duele', 'que permanece', 'que se quiebra', 'que se aleja'],
+      energetic: ['que explota', 'que arde', 'que impulsa', 'que sacude', 'que late', 'que desata', 'que rompe', 'que vibra', 'que despierta', 'que conquista'],
+      calm: ['que acaricia', 'que descansa', 'que fluye', 'que respira', 'que envuelve', 'que calma', 'que arrulla', 'que sana', 'que reconforta', 'que abraza'],
+      romantic: ['que enamora', 'que seduce', 'que une', 'que entrega', 'que late', 'que promete', 'que susurra', 'que acaricia', 'que enciende', 'que perdura'],
+      dreamy: ['que flota', 'que imagina', 'que vuela', 'que brilla', 'que sueña', 'que navega', 'que viaja', 'que danza', 'que contempla', 'que se eleva'],
+      angry: ['que estalla', 'que destruye', 'que arde', 'que grita', 'que rompe', 'que desata', 'que lucha', 'que desafía', 'que arrasa', 'que revienta'],
+      mysterious: ['que oculta', 'que susurra', 'que revela', 'que esconde', 'que envuelve', 'que intriga', 'que seduce', 'que guarda', 'que insinúa', 'que vela'],
+    };
+
+    const objects = {
+      happy: ['el alma', 'el corazón', 'el mundo', 'los sueños', 'la vida', 'el espíritu', 'el camino', 'el horizonte', 'el destino', 'la esperanza'],
+      sad: ['el alma', 'el pasado', 'los recuerdos', 'el corazón', 'el tiempo', 'el adiós', 'la soledad', 'el silencio', 'la memoria', 'el olvido'],
+      energetic: ['la noche', 'el mundo', 'los límites', 'el cielo', 'la tierra', 'el ritmo', 'el pulso', 'la energía', 'la intensidad', 'el momento'],
+      calm: ['el alma', 'el espíritu', 'la mente', 'el corazón', 'el ser', 'la noche', 'el día', 'el tiempo', 'la existencia', 'el presente'],
+      romantic: ['los corazones', 'las almas', 'el destino', 'la eternidad', 'el tiempo', 'la vida', 'el mundo', 'los sentidos', 'el amor', 'los sueños'],
+      dreamy: ['el cielo', 'las estrellas', 'el cosmos', 'la eternidad', 'el infinito', 'el universo', 'los mundos', 'la realidad', 'el espacio', 'el tiempo'],
+      angry: ['el mundo', 'las cadenas', 'los muros', 'el sistema', 'las reglas', 'el silencio', 'la opresión', 'los límites', 'el control', 'la injusticia'],
+      mysterious: ['los secretos', 'la verdad', 'el pasado', 'el misterio', 'lo oculto', 'la realidad', 'el enigma', 'la esencia', 'el velo', 'la sombra'],
+    };
+
+    const moodKey = mood as keyof typeof subjects;
+    const subjectList = subjects[moodKey] || subjects.dreamy;
+    const actionList = actions[moodKey] || actions.dreamy;
+    const objectList = objects[moodKey] || objects.dreamy;
+
+    const subject = subjectList[Math.floor(Math.random() * subjectList.length)];
+    const action = actionList[Math.floor(Math.random() * actionList.length)];
+    const object = objectList[Math.floor(Math.random() * objectList.length)];
+
+    return `${subject} ${action} ${object}`;
+  };
+
   // Función auxiliar para generar UNA canción (reutilizable para batch)
   const generateSingleMusic = async (batchIndex: number = 0, totalBatch: number = 1) => {
+    // Definir batchPrefix al inicio (para usarlo en try y catch)
+    const batchPrefix = totalBatch > 1 ? `[${batchIndex + 1}/${totalBatch}] ` : '';
+    
     try {
       // NUEVO: Si es batch múltiple, crear variación según el tipo seleccionado
       let currentCustomPrompt = customPrompt;
@@ -909,34 +958,22 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
         if (batchVariationType === 'similar') {
           // VARIACIONES SUTILES: Solo cambios en el título, mismo tema
           const variations = [
-            ' #1', // Primera
-            ' #2', // Segunda
-            ' #3', // Tercera
-            ' (Remix)',
-            ' (Extended Mix)',
-            ' (Club Version)',
-            ' (Radio Edit)',
-            ' (Acoustic)',
-            ' (Unplugged)',
-            ' (Alternate)',
+            ' #1', ' #2', ' #3', ' #4', ' #5',
+            ' (Remix)', ' (Extended Mix)', ' (Club Version)',
+            ' (Radio Edit)', ' (Acoustic)', ' (Unplugged)',
+            ' (Alternate)', ' (Live)', ' (Remaster)',
           ];
           titleSuffix = variations[batchIndex % variations.length];
-          // currentCustomPrompt se mantiene igual
+          // currentCustomPrompt se mantiene igual (usa el del usuario si existe)
         } else {
           // VARIACIONES DIFERENTES: Temas completamente distintos
-          const themeOptions = THEMES_BY_MOOD[selectedMood] || [
-            'Una historia única y especial',
-            'Viaje emocional intenso',
-            'Momentos que definen la vida',
-            'Experiencia musical profunda',
-            'Recuerdos inolvidables',
-            'Camino hacia lo desconocido',
-            'Encuentros que transforman',
-            'El eco de las emociones',
-            'Sueños que se hacen realidad',
-            'La fuerza de seguir adelante',
-          ];
-          currentCustomPrompt = themeOptions[batchIndex % themeOptions.length];
+          if (customPrompt && customPrompt.trim() !== '') {
+            // PRIORIDAD 1: Si el usuario escribió un tema, usarlo como base con variación
+            currentCustomPrompt = `${customPrompt} ${['parte', 'capítulo', 'momento', 'instante', 'episodio'][batchIndex % 5]} ${batchIndex + 1}`;
+          } else {
+            // PRIORIDAD 2: Generar tema aleatorio inteligente con IA
+            currentCustomPrompt = generateRandomTheme(selectedMood);
+          }
           // Título incluirá el tema completo (para que coincida con las letras)
           titleSuffix = ` - ${currentCustomPrompt}`;
         }
@@ -955,7 +992,6 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
         title = `${genreLabel} ${moodLabel}${titleSuffix}`;
       }
 
-      const batchPrefix = totalBatch > 1 ? `[${batchIndex + 1}/${totalBatch}] ` : '';
       addLog(`${batchPrefix}🎵 Iniciando generación de música...`);
       if (batchIndex === 0) { // Solo mostrar detalles en la primera generación
         addLog(`🤖 Modelo IA: ${selectedModel} - ${AI_MODELS.find(m => m.value === selectedModel)?.description}`);
