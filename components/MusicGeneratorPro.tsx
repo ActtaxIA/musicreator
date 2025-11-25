@@ -341,7 +341,9 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
   // NUEVOS ESTADOS PARA GENERACIÓN MÚLTIPLE
   const [batchCount, setBatchCount] = useState(1); // Cantidad de generaciones (1-10)
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 }); // Progreso del batch
+  const [batchVariationType, setBatchVariationType] = useState<'similar' | 'different'>('similar'); // Tipo de variación
   const batchTaskIdsRef = useRef<string[]>([]); // IDs de todas las tareas del batch
+  const batchCompletedRef = useRef(0); // Contador de generaciones completadas
 
   // Función para añadir log al modal CON actualización inmediata
   const addLog = (message: string) => {
@@ -888,13 +890,56 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
   // Función auxiliar para generar UNA canción (reutilizable para batch)
   const generateSingleMusic = async (batchIndex: number = 0, totalBatch: number = 1) => {
     try {
+      // NUEVO: Si es batch múltiple, crear variación según el tipo seleccionado
+      let currentCustomPrompt = customPrompt;
+      let titleSuffix = '';
+      
+      if (totalBatch > 1 && batchIndex > 0) {
+        if (batchVariationType === 'similar') {
+          // VARIACIONES SUTILES: Solo cambios en el título, mismo tema
+          const variations = [
+            '', // Primera usa el original sin cambios
+            ' (Versión Extendida)',
+            ' (Remix)',
+            ' (Alternative Version)',
+            ' (Extended Mix)',
+            ' (Original Mix)',
+            ' (Club Version)',
+            ' (Radio Edit)',
+            ' (Acoustic Version)',
+            ' (Unplugged)',
+          ];
+          titleSuffix = variations[batchIndex % variations.length];
+          // currentCustomPrompt se mantiene igual
+        } else {
+          // VARIACIONES DIFERENTES: Temas completamente distintos
+          const themeOptions = THEMES_BY_MOOD[selectedMood] || [
+            'Una historia única y especial',
+            'Viaje emocional intenso',
+            'Momentos que definen la vida',
+            'Experiencia musical profunda',
+            'Recuerdos inolvidables',
+            'Camino hacia lo desconocido',
+          ];
+          currentCustomPrompt = themeOptions[batchIndex % themeOptions.length];
+          // Título incluirá primeras palabras del tema
+          const themeWords = currentCustomPrompt.split(' ').slice(0, 3).join(' ');
+          titleSuffix = ` - ${themeWords}`;
+        }
+      }
+
       // El prompt generado será el STYLE (descripción del género/estilo)
       const styleDescription = buildPrompt();
       
       // Generar título automático basado en el género y mood
       const genreLabel = GENRES.find(g => g.value === selectedGenre)?.label || selectedGenre;
       const moodLabel = MOODS.find(m => m.value === selectedMood)?.label || selectedMood;
-      const title = `${genreLabel} ${moodLabel}`;
+      
+      // NUEVO: Construir título con variación sutil
+      let title = `${genreLabel} ${moodLabel}`;
+      if (totalBatch > 1 && titleSuffix) {
+        title = `${genreLabel} ${moodLabel}${titleSuffix}`;
+      }
 
       const batchPrefix = totalBatch > 1 ? `[${batchIndex + 1}/${totalBatch}] ` : '';
       addLog(`${batchPrefix}🎵 Iniciando generación de música...`);
@@ -912,8 +957,11 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
         if (voiceType !== 'instrumental') {
           addLog(`🌍 Idioma: ${LANGUAGES.find(l => l.value === selectedLanguage)?.label}`);
         }
-        if (customPrompt) {
-          addLog(`💡 Tema personalizado: ${customPrompt.substring(0, 50)}...`);
+        if (currentCustomPrompt) {
+          addLog(`💡 Tema personalizado: ${currentCustomPrompt.substring(0, 50)}...`);
+        }
+        if (totalBatch > 1) {
+          addLog(`📚 Batch múltiple: Cada generación tendrá variación en el título`);
         }
         
         // NUEVOS LOGS PARA PARÁMETROS AVANZADOS
@@ -940,7 +988,7 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
         url: '/api/generate',
         data: {
           prompt: styleDescription,        // Descripción del estilo (STYLE)
-          customPrompt: customPrompt,      // Letras personalizadas del usuario (opcional)
+          customPrompt: currentCustomPrompt, // MODIFICADO: Usar tema específico de este batch
           make_instrumental: voiceType === 'instrumental',
           title,
           genre: selectedGenre,
@@ -988,10 +1036,17 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
     setLoading(true);
     setError('');
     setBatchProgress({ current: 0, total: batchCount });
+    batchCompletedRef.current = 0; // RESETEAR contador de completados
 
     try {
       addLog(`🎯 Iniciando generación de ${batchCount} lote(s) en paralelo...`);
       addLog(`📊 Total de canciones: ${batchCount * 2} (2 variaciones por generación)`);
+      if (batchCount > 1) {
+        const variationText = batchVariationType === 'similar' 
+          ? 'variaciones sutiles en título (Remix, Extended, etc.)'
+          : 'temas/letras completamente diferentes';
+        addLog(`🎵 Mismo género/mood/tempo, ${variationText}`);
+      }
       addLog('');
 
       // Crear array de promesas para ejecutar en paralelo
@@ -1092,17 +1147,35 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
               
               addLog(`🎉 ¡${songs.length} canción(es) guardadas en tu biblioteca!`);
               
-              setSuccessMessage(`🎉 ¡${songs.length} canción(es) generada(s) y guardada(s) correctamente! Ve a la Biblioteca para escucharlas.`);
-              setGenerationStatus('success');
-              setLoading(false);
+              // Incrementar contador de generaciones completadas
+              batchCompletedRef.current += 1;
+              const totalBatch = batchTaskIdsRef.current.length || 1;
+              const completedCount = batchCompletedRef.current;
               
-              // Notificar al componente padre
-              if (onSongGenerated) {
-                onSongGenerated();
+              addLog(`📊 Progreso: ${completedCount}/${totalBatch} generaciones completadas`);
+              
+              // Solo actualizar estado final cuando TODAS las generaciones terminen
+              if (completedCount >= totalBatch) {
+                const totalSongs = completedCount * 2; // Cada generación = 2 canciones
+                addLog('');
+                addLog(`🎊 ¡TODAS LAS GENERACIONES COMPLETADAS!`);
+                addLog(`🎵 Total: ${totalSongs} canciones generadas y guardadas`);
+                addLog('');
+                
+                setSuccessMessage(`🎉 ¡${totalSongs} canciones generadas y guardadas correctamente! Ve a la Biblioteca para escucharlas.`);
+                setGenerationStatus('success');
+                setLoading(false);
+                
+                // Notificar al componente padre
+                if (onSongGenerated) {
+                  onSongGenerated();
+                }
               }
               
-              // Limpiar mensaje después de 5 segundos
-              setTimeout(() => setSuccessMessage(''), 5000);
+              // Limpiar mensaje después de 10 segundos (solo cuando termine todo)
+              if (completedCount >= totalBatch) {
+                setTimeout(() => setSuccessMessage(''), 10000);
+              }
             } catch (saveError: any) {
               addLog(`❌ Error al guardar: ${saveError.message}`);
               setError('Canción generada pero hubo un error al guardar: ' + saveError.message);
@@ -1592,10 +1665,48 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
               </div>
             </div>
             {batchCount > 1 && (
-              <div className="mt-3 pt-3 border-t border-blue-200 dark:border-zinc-700">
+              <div className="mt-3 pt-3 border-t border-blue-200 dark:border-zinc-700 space-y-3">
                 <p className="text-xs text-zinc-600 dark:text-zinc-400">
                   ⚡ <strong>Generación en paralelo:</strong> Todas las canciones se generan simultáneamente para máxima velocidad
                 </p>
+                
+                {/* NUEVO: Selector de Tipo de Variación */}
+                <div>
+                  <label className="block text-sm font-medium text-zinc-900 dark:text-white mb-2">
+                    🎭 Tipo de Variación (Lírica/Título)
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setBatchVariationType('similar')}
+                      disabled={loading}
+                      className={`px-4 py-3 rounded-md font-medium text-sm transition-all text-left ${
+                        batchVariationType === 'similar'
+                          ? 'bg-blue-600 text-white border-blue-500'
+                          : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 border-zinc-300 dark:border-zinc-600'
+                      } border disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      <div className="font-bold">📝 Parecidas</div>
+                      <div className="text-xs opacity-80 mt-1">Mismo tema, variaciones sutiles en título</div>
+                    </button>
+                    <button
+                      onClick={() => setBatchVariationType('different')}
+                      disabled={loading}
+                      className={`px-4 py-3 rounded-md font-medium text-sm transition-all text-left ${
+                        batchVariationType === 'different'
+                          ? 'bg-purple-600 text-white border-purple-500'
+                          : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 border-zinc-300 dark:border-zinc-600'
+                      } border disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      <div className="font-bold">🎨 Diferentes</div>
+                      <div className="text-xs opacity-80 mt-1">Temas completamente distintos</div>
+                    </button>
+                  </div>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
+                    {batchVariationType === 'similar' 
+                      ? '📌 Género/Mood/Tempo iguales. Solo varía el título (Ej: "Remix", "Extended")'
+                      : '📌 Género/Mood/Tempo iguales. Cada canción tiene tema/lírica diferente'}
+                  </p>
+                </div>
               </div>
             )}
           </div>
