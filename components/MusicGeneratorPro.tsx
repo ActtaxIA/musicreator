@@ -894,20 +894,20 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
       let currentCustomPrompt = customPrompt;
       let titleSuffix = '';
       
-      if (totalBatch > 1 && batchIndex > 0) {
+      if (totalBatch > 1) {
         if (batchVariationType === 'similar') {
           // VARIACIONES SUTILES: Solo cambios en el título, mismo tema
           const variations = [
-            '', // Primera usa el original sin cambios
-            ' (Versión Extendida)',
+            ' #1', // Primera
+            ' #2', // Segunda
+            ' #3', // Tercera
             ' (Remix)',
-            ' (Alternative Version)',
             ' (Extended Mix)',
-            ' (Original Mix)',
             ' (Club Version)',
             ' (Radio Edit)',
-            ' (Acoustic Version)',
+            ' (Acoustic)',
             ' (Unplugged)',
+            ' (Alternate)',
           ];
           titleSuffix = variations[batchIndex % variations.length];
           // currentCustomPrompt se mantiene igual
@@ -920,6 +920,10 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
             'Experiencia musical profunda',
             'Recuerdos inolvidables',
             'Camino hacia lo desconocido',
+            'Encuentros que transforman',
+            'El eco de las emociones',
+            'Sueños que se hacen realidad',
+            'La fuerza de seguir adelante',
           ];
           currentCustomPrompt = themeOptions[batchIndex % themeOptions.length];
           // Título incluirá primeras palabras del tema
@@ -935,9 +939,9 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
       const genreLabel = GENRES.find(g => g.value === selectedGenre)?.label || selectedGenre;
       const moodLabel = MOODS.find(m => m.value === selectedMood)?.label || selectedMood;
       
-      // NUEVO: Construir título con variación sutil
+      // NUEVO: Construir título con variación
       let title = `${genreLabel} ${moodLabel}`;
-      if (totalBatch > 1 && titleSuffix) {
+      if (titleSuffix) {
         title = `${genreLabel} ${moodLabel}${titleSuffix}`;
       }
 
