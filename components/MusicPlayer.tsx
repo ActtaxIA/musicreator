@@ -482,12 +482,21 @@ export default function MusicPlayer({ songs, userId, userRole, onToggleFavorite 
           }
         };
 
-        // Actualizar posición inmediatamente y cada segundo
+        // Actualizar posición inicialmente
         updatePositionState();
-        const positionInterval = setInterval(updatePositionState, 1000);
+
+        // ✅ OPTIMIZACIÓN: Usar evento timeupdate en lugar de setInterval
+        // Esto reduce consumo de CPU/batería significativamente
+        const onTimeUpdate = () => {
+          // Solo actualizar cada 3 segundos aprox (throttle manual)
+          if (!audio.currentTime || audio.currentTime % 3 < 0.5) {
+            updatePositionState();
+          }
+        };
+        audio.addEventListener('timeupdate', onTimeUpdate);
 
         return () => {
-          clearInterval(positionInterval);
+          audio.removeEventListener('timeupdate', onTimeUpdate);
         };
       } catch (error) {
         console.error('Error setting up Media Session:', error);
