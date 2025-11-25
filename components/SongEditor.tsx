@@ -172,7 +172,10 @@ export default function SongEditor({ song, onBack, onUpdate }: Props) {
     setIsExtending(true);
 
     try {
-      let continueAtTime = position === 'start' ? 0 : position === 'end' ? duration : continueAt;
+      // Para "end", usar duration - 1 segundo (según spec de Suno API)
+      let continueAtTime = position === 'start' ? 0 : 
+                          position === 'end' ? Math.max(0, duration - 1) : 
+                          continueAt;
 
       // Validación: continueAt debe ser > 0
       if (continueAtTime <= 0 && position !== 'start') {
@@ -181,8 +184,8 @@ export default function SongEditor({ song, onBack, onUpdate }: Props) {
         return;
       }
 
-      // Validación: continueAt debe ser < duración total
-      if (continueAtTime >= duration) {
+      // Validación: continueAt debe ser < duración total (según Suno API spec)
+      if (continueAtTime >= duration && position !== 'end') {
         showToast('error', `El tiempo debe ser menor a la duración total (${formatTime(duration)})`);
         setIsExtending(false);
         return;
