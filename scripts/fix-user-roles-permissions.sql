@@ -48,3 +48,4 @@ AND tablename = 'user_roles';
 -- 2. NEXT_PUBLIC_SUPABASE_URL esté configurada
 -- 3. NEXT_PUBLIC_SUPABASE_ANON_KEY esté configurada
 
+

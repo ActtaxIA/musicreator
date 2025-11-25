@@ -22,20 +22,32 @@ export async function POST(request: Request) {
         prompt: prompt || 'Continue the music with similar style',
         continueAt: continueAt || 0,
         style: style || '',
+        title: `Extended - ${style}`,
+        model: 'V5', // Usar el mismo modelo que la canción original
         defaultParamFlag: true,
+        callBackUrl: process.env.SUNO_CALLBACK_URL || 'https://webhook.site/suno-music-gen'
       },
       {
         headers: {
           'Authorization': `Bearer ${process.env.SUNO_API_KEY}`,
           'Content-Type': 'application/json',
         },
+        timeout: 60000
       }
     );
 
-    return NextResponse.json({
-      success: true,
-      data: response.data,
-    });
+    // La respuesta de Suno es: { code: 200, msg: "success", data: { taskId: "xxx" } }
+    if (response.data.code === 200 && response.data.data?.taskId) {
+      return NextResponse.json({
+        success: true,
+        taskId: response.data.data.taskId,
+      });
+    } else {
+      return NextResponse.json({
+        success: false,
+        error: response.data.msg || 'Error desconocido',
+      }, { status: 500 });
+    }
   } catch (error: any) {
     console.error('Error extending song:', error.response?.data || error.message);
     return NextResponse.json(

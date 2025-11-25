@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, memo, useCallback } from 'react';
 import { Song, supabase } from '@/lib/supabase';
 import { UserRole } from '@/types';
+import { useToast } from '../hooks/useToast';
 import { 
   Play, 
   Pause, 
@@ -42,6 +43,7 @@ export default function SongLibrary({
   onUpdatePlayCount,
   onEdit
 }: Props) {
+  const { showToast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('all');
   const [sortBy, setSortBy] = useState<'recent' | 'oldest' | 'duration' | 'plays'>('recent');
@@ -1097,16 +1099,16 @@ export default function SongLibrary({
                                  userId: userId,
                                }),
                              });
-                             const data = await response.json();
-                             if (data.success) {
-                               alert('✅ Cover generándose!');
-                               setTimeout(() => window.location.reload(), 3000);
-                             } else {
-                               alert('❌ Error: ' + data.error);
-                             }
-                           } catch (error) {
-                             alert('❌ Error generando cover');
-                           }
+                            const data = await response.json();
+                            if (data.success) {
+                              showToast('success', 'Cover generándose... Recarga en unos segundos');
+                              setTimeout(() => window.location.reload(), 3000);
+                            } else {
+                              showToast('error', 'Error: ' + data.error);
+                            }
+                          } catch (error) {
+                            showToast('error', 'Error generando cover');
+                          }
                          }}
                          className="p-2 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 transition-all"
                          title="Generar Cover"

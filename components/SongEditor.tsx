@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Song } from '@/lib/supabase';
 import WaveSurfer from 'wavesurfer.js';
+import { useToast } from '../hooks/useToast';
 import {
   Play,
   Pause,
@@ -45,6 +46,7 @@ interface Extension {
 }
 
 export default function SongEditor({ song, onBack, onUpdate }: Props) {
+  const { showToast } = useToast();
   const waveformRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -156,10 +158,10 @@ export default function SongEditor({ song, onBack, onUpdate }: Props) {
       };
 
       await onUpdate(song.id, updates);
-      alert('✅ Información actualizada correctamente');
+      showToast('success', 'Información actualizada correctamente');
     } catch (error) {
       console.error('Error al guardar metadatos:', error);
-      alert('❌ Error al guardar la información');
+      showToast('error', 'Error al guardar la información');
     } finally {
       setIsSavingMetadata(false);
     }
@@ -180,35 +182,48 @@ export default function SongEditor({ song, onBack, onUpdate }: Props) {
       });
 
       if (response.data.success) {
-        const extensionId = response.data.data[0]?.id;
+        const taskId = response.data.taskId;
         
+        if (!taskId) {
+          showToast('error', 'No se recibió ID de tarea de extensión');
+          return;
+        }
+
         const newExtension: Extension = {
-          id: extensionId,
+          id: taskId,
           continueAt: continueAtTime,
           prompt: extendPrompt,
           status: 'processing',
         };
 
         setExtensions(prev => [...prev, newExtension]);
-        pollExtensionStatus(extensionId);
+        pollExtensionStatus(taskId);
 
-        alert(`✅ Extensión iniciada desde ${formatTime(continueAtTime)}\n\nEspera 30-60 segundos...`);
+        showToast('success', `Extensión iniciada desde ${formatTime(continueAtTime)}. Espera 30-60 segundos...`);
+      } else {
+        showToast('error', response.data.error || 'Error al iniciar extensión');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error extending:', error);
-      alert('Error al extender la canción');
+      showToast('error', error.response?.data?.error || 'Error al extender la canción');
     } finally {
       setIsExtending(false);
     }
   };
 
-  const pollExtensionStatus = async (sunoId: string) => {
+  const pollExtensionStatus = async (taskId: string) => {
+    if (!taskId) {
+      console.error('❌ Task ID is undefined, cannot poll status');
+      showToast('error', 'ID de tarea inválido');
+      return;
+    }
+
     const maxAttempts = 60;
     let attempts = 0;
 
     const checkStatus = async () => {
       try {
-        const response = await axios.get(`/api/status?ids=${sunoId}`);
+        const response = await axios.get(`/api/status?ids=${taskId}`);
 
         if (response.data.success) {
           const statusData = response.data.data;
@@ -219,11 +234,12 @@ export default function SongEditor({ song, onBack, onUpdate }: Props) {
           if (completedSong) {
             setExtensions(prev =>
               prev.map(ext =>
-                ext.id === sunoId
+                ext.id === taskId
                   ? { ...ext, audioUrl: completedSong.audio_url, status: 'complete' }
                   : ext
               )
             );
+            showToast('success', '¡Extensión completada!');
             return;
           }
 
@@ -232,8 +248,11 @@ export default function SongEditor({ song, onBack, onUpdate }: Props) {
             setTimeout(checkStatus, 5000);
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error checking extension status:', error);
+        if (attempts >= maxAttempts) {
+          showToast('error', 'Tiempo agotado esperando extensión');
+        }
       }
     };
 

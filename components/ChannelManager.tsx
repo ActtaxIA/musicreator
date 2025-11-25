@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useToast } from '../hooks/useToast';
 import { Channel, Song } from '@/types';
 import { 
   Plus, 
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export default function ChannelManager({ userRole }: Props) {
+  const { showToast } = useToast();
   const [channels, setChannels] = useState<Channel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
@@ -148,12 +150,12 @@ export default function ChannelManager({ userRole }: Props) {
 
     if (error) {
       if (error.code === '23505') {
-        alert('⚠️ Esta canción ya está en el canal');
+        showToast('warning', 'Esta canción ya está en el canal');
       } else {
-        alert('❌ Error al añadir canción');
+        showToast('error', 'Error al añadir canción');
       }
     } else {
-      alert('✅ Canción añadida');
+      showToast('success', 'Canción añadida al canal');
       // Recargar canciones del canal
       fetchChannelSongs(selectedChannel.id);
     }
