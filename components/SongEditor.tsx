@@ -174,11 +174,26 @@ export default function SongEditor({ song, onBack, onUpdate }: Props) {
     try {
       let continueAtTime = position === 'start' ? 0 : position === 'end' ? duration : continueAt;
 
+      // Validación: continueAt debe ser > 0
+      if (continueAtTime <= 0 && position !== 'start') {
+        showToast('error', 'El tiempo de extensión debe ser mayor a 0 segundos');
+        setIsExtending(false);
+        return;
+      }
+
+      // Validación: continueAt debe ser < duración total
+      if (continueAtTime >= duration) {
+        showToast('error', `El tiempo debe ser menor a la duración total (${formatTime(duration)})`);
+        setIsExtending(false);
+        return;
+      }
+
       const response = await axios.post('/api/extend', {
         audioId: song.suno_id,
-        prompt: extendPrompt || `Continue the ${song.genre} music with similar style`,
+        prompt: extendPrompt || `Continue the ${song.genre} music with similar style and energy`,
         continueAt: continueAtTime,
-        style: song.genre,
+        style: song.genre || 'original',
+        title: `${song.title} (Extended)`,
       });
 
       if (response.data.success) {
