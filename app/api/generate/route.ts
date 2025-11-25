@@ -12,7 +12,12 @@ export async function POST(request: NextRequest) {
       genre, 
       voiceType,
       language = 'spanish',
-      model = 'V5'      // Modelo IA seleccionado (default: V5)
+      model = 'V5',      // Modelo IA seleccionado (default: V5)
+      // NUEVOS PARÁMETROS AVANZADOS
+      vocalGender,       // 'm' | 'f' | undefined
+      styleWeight,       // 0-1
+      weirdnessConstraint, // 0-1
+      negativeTags       // string
     } = body;
 
     const apiKey = process.env.SUNO_API_KEY;
@@ -48,6 +53,11 @@ export async function POST(request: NextRequest) {
     console.log('  - prompt:', fullPrompt);
     console.log('  - instrumental:', make_instrumental);
     console.log('  - model:', model);
+    // NUEVOS LOGS
+    if (vocalGender) console.log('  - vocalGender:', vocalGender);
+    if (styleWeight !== undefined) console.log('  - styleWeight:', styleWeight);
+    if (weirdnessConstraint !== undefined) console.log('  - weirdnessConstraint:', weirdnessConstraint);
+    if (negativeTags) console.log('  - negativeTags:', negativeTags);
 
     // Payload según documentación oficial (customMode: false)
     const payload: any = {
@@ -57,6 +67,20 @@ export async function POST(request: NextRequest) {
       model: model,                // Modelo seleccionado por el usuario (V5 por defecto)
       callBackUrl: process.env.SUNO_CALLBACK_URL || 'https://webhook.site/suno-music-gen'
     };
+
+    // AÑADIR PARÁMETROS AVANZADOS SI ESTÁN DEFINIDOS
+    if (vocalGender) {
+      payload.vocalGender = vocalGender;
+    }
+    if (styleWeight !== undefined) {
+      payload.styleWeight = styleWeight;
+    }
+    if (weirdnessConstraint !== undefined) {
+      payload.weirdnessConstraint = weirdnessConstraint;
+    }
+    if (negativeTags) {
+      payload.negativeTags = negativeTags;
+    }
 
     // Determinar modelo fallback según el modelo seleccionado
     const fallbackModel = model === 'V5' ? 'V4' : 

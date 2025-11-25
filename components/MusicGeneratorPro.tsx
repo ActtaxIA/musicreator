@@ -169,6 +169,13 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
   const [selectedLanguage, setSelectedLanguage] = useState('spanish'); // NUEVO
   const [selectedModel, setSelectedModel] = useState<'V5' | 'V4_5PLUS' | 'V4_5' | 'V4' | 'V3_5'>('V5'); // NUEVO: Selector de modelo IA
   
+  // NUEVOS PARÁMETROS AVANZADOS
+  const [vocalGender, setVocalGender] = useState<'any' | 'm' | 'f'>('any'); // any = sin preferencia
+  const [styleWeight, setStyleWeight] = useState(0.65); // 0-1, default 0.65
+  const [weirdnessConstraint, setWeirdnessConstraint] = useState(0.5); // 0-1, default 0.5 (creatividad media)
+  const [negativeTags, setNegativeTags] = useState(''); // Estilos a evitar
+  const [longTrack, setLongTrack] = useState(false); // Sugerencia de canción larga
+  
   const [loading, setLoading] = useState(false);
   const [songs, setSongs] = useState<Song[]>([]);
   const [error, setError] = useState('');
@@ -490,6 +497,11 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
       finalPrompt += `. THEME: ${translatedCustom}`;
     }
 
+    // NUEVO: Sugerencia de canción larga
+    if (longTrack) {
+      finalPrompt += `, full-length extended track, long version, epic 8-minute journey`;
+    }
+
     return finalPrompt;
   };
 
@@ -677,6 +689,19 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
         addLog(`💡 Tema personalizado: ${customPrompt.substring(0, 50)}...`);
       }
       
+      // NUEVOS LOGS PARA PARÁMETROS AVANZADOS
+      if (longTrack) {
+        addLog(`⏱️ Duración: Canción larga sugerida (8+ min)`);
+      }
+      if (vocalGender !== 'any') {
+        addLog(`🎤 Género vocal: ${vocalGender === 'm' ? 'Masculino' : 'Femenino'}`);
+      }
+      addLog(`🎯 Adherencia al estilo: ${Math.round(styleWeight * 100)}%`);
+      addLog(`🎨 Creatividad: ${Math.round(weirdnessConstraint * 100)}%`);
+      if (negativeTags) {
+        addLog(`🚫 Evitar: ${negativeTags}`);
+      }
+      
       // Mostrar el prompt completo que se enviará
       addLog(`📋 Prompt completo: ${styleDescription.substring(0, 100)}...`);
 
@@ -693,7 +718,12 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
           genre: selectedGenre,
           voiceType,
           language: selectedLanguage,      // Para generar letras placeholder en el idioma correcto
-          model: selectedModel,            // NUEVO: Modelo IA seleccionado por el usuario
+          model: selectedModel,            // Modelo IA seleccionado por el usuario
+          // NUEVOS PARÁMETROS AVANZADOS
+          vocalGender: vocalGender === 'any' ? undefined : vocalGender, // Solo enviar si está definido
+          styleWeight: styleWeight,
+          weirdnessConstraint: weirdnessConstraint,
+          negativeTags: negativeTags.trim() || undefined, // Solo enviar si no está vacío
         },
         headers: {
           'Content-Type': 'application/json',
@@ -1102,11 +1132,129 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
             </div>
           )}
 
-          {/* Nota sobre duración */}
-          <div className="bg-blue-50 dark:bg-zinc-800/50 border border-blue-200 dark:border-zinc-700 rounded-lg p-4">
-            <p className="text-sm text-blue-700 dark:text-zinc-400">
-              ℹ️ <strong>Duración:</strong> La IA genera canciones de aproximadamente <strong>2-2.5 minutos</strong> según la estructura musical. Para canciones más largas, usa la función "Extend" en el editor después de generar.
-            </p>
+          {/* NUEVOS: Parámetros Avanzados */}
+          <div className="border-t border-zinc-200 dark:border-zinc-700 pt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
+                ⚙️ Parámetros Avanzados (Opcional)
+              </h3>
+            </div>
+
+            <div className="space-y-4">
+              {/* Duración Sugerida */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={longTrack}
+                    onChange={(e) => setLongTrack(e.target.checked)}
+                    className="w-4 h-4 rounded border-zinc-300 dark:border-zinc-600 text-blue-600 focus:ring-blue-500"
+                  />
+                  ⏱️ Canción Larga (8+ minutos)
+                </label>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 ml-6">
+                  Sugiere a la IA generar una canción más larga (no garantizado, depende del modelo y estructura musical)
+                </p>
+              </div>
+
+              {/* Género de Voz */}
+              {voiceType !== 'instrumental' && (
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                    🎤 Género de Voz Preferido
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      onClick={() => setVocalGender('any')}
+                      className={`px-4 py-2 rounded-md font-medium text-sm transition-all ${
+                        vocalGender === 'any'
+                          ? 'bg-blue-600 text-white border-blue-500'
+                          : 'bg-gray-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-700 border-zinc-200 dark:border-zinc-700'
+                      } border`}
+                    >
+                      Cualquiera
+                    </button>
+                    <button
+                      onClick={() => setVocalGender('m')}
+                      className={`px-4 py-2 rounded-md font-medium text-sm transition-all ${
+                        vocalGender === 'm'
+                          ? 'bg-blue-600 text-white border-blue-500'
+                          : 'bg-gray-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-700 border-zinc-200 dark:border-zinc-700'
+                      } border`}
+                    >
+                      Masculina
+                    </button>
+                    <button
+                      onClick={() => setVocalGender('f')}
+                      className={`px-4 py-2 rounded-md font-medium text-sm transition-all ${
+                        vocalGender === 'f'
+                          ? 'bg-blue-600 text-white border-blue-500'
+                          : 'bg-gray-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-700 border-zinc-200 dark:border-zinc-700'
+                      } border`}
+                    >
+                      Femenina
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Style Weight */}
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                  🎯 Adherencia al Estilo: {Math.round(styleWeight * 100)}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={styleWeight}
+                  onChange={(e) => setStyleWeight(parseFloat(e.target.value))}
+                  className="w-full h-2 bg-gray-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                />
+                <div className="flex justify-between text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                  <span>Flexible</span>
+                  <span>Estricto</span>
+                </div>
+              </div>
+
+              {/* Weirdness Constraint */}
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                  🎨 Creatividad/Experimentación: {Math.round(weirdnessConstraint * 100)}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={weirdnessConstraint}
+                  onChange={(e) => setWeirdnessConstraint(parseFloat(e.target.value))}
+                  className="w-full h-2 bg-gray-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                />
+                <div className="flex justify-between text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                  <span>Convencional</span>
+                  <span>Experimental</span>
+                </div>
+              </div>
+
+              {/* Negative Tags */}
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                  🚫 Estilos a Evitar (opcional)
+                </label>
+                <input
+                  type="text"
+                  value={negativeTags}
+                  onChange={(e) => setNegativeTags(e.target.value)}
+                  placeholder="Ej: Heavy Metal, Drums, Aggressive"
+                  className="w-full px-4 py-2 rounded-md border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                  Estilos o elementos musicales que NO quieres en la canción
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Prompt Personalizado */}
