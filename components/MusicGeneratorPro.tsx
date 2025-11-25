@@ -722,9 +722,8 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
       setVocalGender('any');
     }
 
-    // 11. Modelo aleatorio (con peso hacia V5)
-    const models: ('V5' | 'V4_5PLUS' | 'V4_5' | 'V4' | 'V3_5')[] = ['V5', 'V5', 'V5', 'V4_5PLUS', 'V4']; // V5 tiene 3x probabilidad
-    setSelectedModel(models[Math.floor(Math.random() * models.length)]);
+    // 11. Modelo SIEMPRE V5 (no se randomiza)
+    setSelectedModel('V5');
 
     // 12. Limpiar negative tags
     setNegativeTags('');
