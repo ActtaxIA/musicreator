@@ -152,6 +152,155 @@ const AI_MODELS = [
   },
 ];
 
+// MAPEOS PARA GENERACIÓN ALEATORIA INTELIGENTE
+const MOODS_BY_GENRE: { [key: string]: string[] } = {
+  'techno': ['energetic', 'dark', 'mysterious', 'powerful'],
+  'flamenco': ['romantic', 'melancholic', 'powerful', 'sensual'],
+  'jazz': ['relaxed', 'nostalgic', 'romantic', 'uplifting'],
+  'blues': ['sad', 'melancholic', 'nostalgic', 'peaceful'],
+  'rock': ['energetic', 'aggressive', 'powerful', 'uplifting'],
+  'metal': ['aggressive', 'dark', 'powerful', 'epic'],
+  'lo-fi': ['relaxed', 'dreamy', 'peaceful', 'nostalgic'],
+  'ambient': ['peaceful', 'dreamy', 'mysterious', 'relaxed'],
+  'trap': ['aggressive', 'dark', 'energetic', 'powerful'],
+  'reggae': ['relaxed', 'happy', 'peaceful', 'uplifting'],
+  'salsa': ['happy', 'energetic', 'romantic', 'uplifting'],
+  'cumbia': ['happy', 'energetic', 'romantic', 'uplifting'],
+  'classical': ['peaceful', 'epic', 'romantic', 'melancholic'],
+  'pop': ['happy', 'romantic', 'uplifting', 'energetic'],
+  'indie': ['melancholic', 'romantic', 'nostalgic', 'dreamy'],
+  'default': ['energetic', 'relaxed', 'romantic', 'mysterious'], // Para géneros sin mapeo específico
+};
+
+const TEMPO_RANGES: { [key: string]: { min: number; max: number } } = {
+  'techno': { min: 125, max: 135 },
+  'house': { min: 120, max: 130 },
+  'trance': { min: 130, max: 145 },
+  'drum-and-bass': { min: 160, max: 180 },
+  'dubstep': { min: 135, max: 145 },
+  'trap': { min: 130, max: 150 },
+  'hip-hop': { min: 80, max: 110 },
+  'reggae': { min: 60, max: 90 },
+  'salsa': { min: 160, max: 220 },
+  'flamenco': { min: 90, max: 120 },
+  'jazz': { min: 80, max: 160 },
+  'blues': { min: 60, max: 90 },
+  'rock': { min: 110, max: 140 },
+  'metal': { min: 140, max: 180 },
+  'punk': { min: 150, max: 200 },
+  'lo-fi': { min: 70, max: 90 },
+  'ambient': { min: 60, max: 90 },
+  'classical': { min: 60, max: 140 },
+  'pop': { min: 100, max: 130 },
+  'default': { min: 90, max: 130 },
+};
+
+const ENERGY_RANGES: { [key: string]: { min: number; max: number } } = {
+  'energetic': { min: 70, max: 95 },
+  'aggressive': { min: 80, max: 100 },
+  'powerful': { min: 70, max: 90 },
+  'epic': { min: 65, max: 85 },
+  'uplifting': { min: 60, max: 80 },
+  'happy': { min: 55, max: 75 },
+  'romantic': { min: 35, max: 65 },
+  'relaxed': { min: 20, max: 50 },
+  'peaceful': { min: 15, max: 40 },
+  'dreamy': { min: 20, max: 50 },
+  'nostalgic': { min: 30, max: 60 },
+  'melancholic': { min: 25, max: 55 },
+  'sad': { min: 20, max: 45 },
+  'dark': { min: 40, max: 70 },
+  'mysterious': { min: 35, max: 65 },
+  'sensual': { min: 30, max: 60 },
+};
+
+const THEMES_BY_MOOD: { [key: string]: string[] } = {
+  'romantic': [
+    'Un amor imposible bajo la lluvia',
+    'Recuerdos de un verano junto al mar',
+    'La promesa de volver algún día',
+    'Miradas que lo dicen todo',
+    'Bailando hasta el amanecer',
+    'Cartas de amor nunca enviadas',
+  ],
+  'melancholic': [
+    'Nostalgia de días que no volverán',
+    'Soledad en una ciudad dormida',
+    'El eco de una despedida',
+    'Fotografías en blanco y negro',
+    'El último tren de la noche',
+    'Susurros del pasado',
+  ],
+  'energetic': [
+    'La fiesta que nunca termina',
+    'Corriendo hacia el horizonte',
+    'Liberación y adrenalina pura',
+    'Energía que rompe barreras',
+    'El pulso de la noche',
+    'Volar sin límites',
+  ],
+  'dark': [
+    'Sombras en la niebla nocturna',
+    'El peso del tiempo y el olvido',
+    'Viaje al abismo interior',
+    'Secretos ocultos en la oscuridad',
+    'El lado oscuro del alma',
+    'Ecos de un mundo perdido',
+  ],
+  'peaceful': [
+    'Atardecer junto al río',
+    'Meditación en el bosque',
+    'El silencio de la montaña',
+    'Despertar con el canto de los pájaros',
+    'La calma después de la tormenta',
+    'Refugio interior',
+  ],
+  'powerful': [
+    'Guerrero inquebrantable',
+    'Levantarse después de la caída',
+    'Fuerza de voluntad',
+    'El rugido del león',
+    'Conquistar lo imposible',
+    'Poder sin límites',
+  ],
+  'dreamy': [
+    'Viaje a través de las nubes',
+    'Sueños de mundos lejanos',
+    'Flotando en el espacio',
+    'Fantasía y realidad',
+    'El jardín de los sueños',
+    'Entre la vigilia y el sueño',
+  ],
+  'happy': [
+    'Celebración de la vida',
+    'Sonrisas bajo el sol',
+    'Día perfecto',
+    'Alegría compartida',
+    'Momentos que brillan',
+    'Risas y buenos tiempos',
+  ],
+  'nostalgic': [
+    'Recuerdos de la infancia',
+    'Viejo café parisino',
+    'Ecos de otra época',
+    'Cintas de cassette olvidadas',
+    'El sabor de lo antiguo',
+    'Cuando todo era más simple',
+  ],
+};
+
+const LANGUAGES_BY_GENRE: { [key: string]: string[] } = {
+  'flamenco': ['spanish'],
+  'reggaeton': ['spanish'],
+  'salsa': ['spanish'],
+  'cumbia': ['spanish'],
+  'bachata': ['spanish'],
+  'k-pop': ['korean'],
+  'opera': ['italian', 'german', 'french'],
+  'tango': ['spanish'],
+  'default': ['spanish', 'english'],
+};
+
 interface MusicGeneratorProProps {
   userId?: string;
   onSongGenerated?: () => void;
@@ -503,6 +652,86 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
     }
 
     return finalPrompt;
+  };
+
+  // NUEVA FUNCIÓN: Generación Aleatoria Inteligente
+  const randomizeGeneration = () => {
+    // 1. Género aleatorio
+    const randomGenre = GENRES[Math.floor(Math.random() * GENRES.length)].value;
+    setSelectedGenre(randomGenre);
+
+    // 2. Mood coherente con el género
+    const compatibleMoods = MOODS_BY_GENRE[randomGenre] || MOODS_BY_GENRE['default'];
+    const randomMood = compatibleMoods[Math.floor(Math.random() * compatibleMoods.length)];
+    setSelectedMood(randomMood);
+
+    // 3. Tempo coherente con el género
+    const tempoRange = TEMPO_RANGES[randomGenre] || TEMPO_RANGES['default'];
+    const randomTempo = Math.floor(Math.random() * (tempoRange.max - tempoRange.min + 1)) + tempoRange.min;
+    setTempo(randomTempo);
+
+    // 4. Energía coherente con el mood
+    const energyRange = ENERGY_RANGES[randomMood] || { min: 40, max: 70 };
+    const randomEnergy = Math.floor(Math.random() * (energyRange.max - energyRange.min + 1)) + energyRange.min;
+    setEnergy(randomEnergy);
+
+    // 5. Estilo aleatorio
+    const randomStyle = STYLES[Math.floor(Math.random() * STYLES.length)].value;
+    setSelectedStyle(randomStyle);
+
+    // 6. Voz (70% con voz, 30% instrumental)
+    const voiceRandom = Math.random();
+    let selectedVoice: string;
+    if (voiceRandom > 0.7) {
+      selectedVoice = 'instrumental';
+    } else {
+      const voices = ['male', 'female', 'choir'];
+      selectedVoice = voices[Math.floor(Math.random() * voices.length)];
+    }
+    setVoiceType(selectedVoice);
+
+    // 7. Idioma coherente con el género
+    const compatibleLanguages = LANGUAGES_BY_GENRE[randomGenre] || LANGUAGES_BY_GENRE['default'];
+    const randomLanguage = compatibleLanguages[Math.floor(Math.random() * compatibleLanguages.length)];
+    setSelectedLanguage(randomLanguage);
+
+    // 8. Tema personalizado coherente con el mood
+    const themeOptions = THEMES_BY_MOOD[randomMood] || [
+      'Una historia única y especial',
+      'Viaje emocional intenso',
+      'Momentos que definen la vida',
+    ];
+    const randomTheme = themeOptions[Math.floor(Math.random() * themeOptions.length)];
+    setCustomPrompt(randomTheme);
+
+    // 9. Parámetros avanzados aleatorios pero razonables
+    setStyleWeight(0.5 + (Math.random() * 0.3)); // 50-80%
+    setWeirdnessConstraint(Math.random() * 0.7); // 0-70%
+    setLongTrack(Math.random() > 0.8); // 20% de probabilidad
+    
+    // 10. Género vocal (solo si no es instrumental)
+    if (selectedVoice !== 'instrumental') {
+      const genderOptions: ('any' | 'm' | 'f')[] = ['any', 'm', 'f'];
+      setVocalGender(genderOptions[Math.floor(Math.random() * genderOptions.length)]);
+    } else {
+      setVocalGender('any');
+    }
+
+    // 11. Modelo aleatorio (con peso hacia V5)
+    const models: ('V5' | 'V4_5PLUS' | 'V4_5' | 'V4' | 'V3_5')[] = ['V5', 'V5', 'V5', 'V4_5PLUS', 'V4']; // V5 tiene 3x probabilidad
+    setSelectedModel(models[Math.floor(Math.random() * models.length)]);
+
+    // 12. Limpiar negative tags
+    setNegativeTags('');
+
+    console.log('🎲 Generación aleatoria aplicada:', {
+      genre: randomGenre,
+      mood: randomMood,
+      tempo: randomTempo,
+      energy: randomEnergy,
+      voice: selectedVoice,
+      theme: randomTheme,
+    });
   };
 
   const saveSongToSupabase = async (song: any) => {
@@ -965,11 +1194,24 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
 
         {/* Header */}
         <div className="border-b border-zinc-200 dark:border-zinc-800 p-6">
-          <div className="flex items-center gap-3">
-            <Music className="w-6 h-6 text-blue-600 dark:text-blue-500" />
-            <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Generador de Música IA</h2>
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <Music className="w-6 h-6 text-blue-600 dark:text-blue-500" />
+              <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Generador de Música IA</h2>
+            </div>
+            {/* Botón de Generación Aleatoria */}
+            <button
+              onClick={randomizeGeneration}
+              disabled={loading}
+              className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium transition-all flex items-center gap-2 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Genera una configuración aleatoria coherente"
+            >
+              <span className="text-lg">🎲</span>
+              <span className="hidden sm:inline">Generación Aleatoria</span>
+              <span className="sm:hidden">Aleatorio</span>
+            </button>
           </div>
-          <p className="text-zinc-600 dark:text-zinc-400 mt-1">Configura los parámetros y genera tu música</p>
+          <p className="text-zinc-600 dark:text-zinc-400 mt-2">Configura los parámetros y genera tu música</p>
         </div>
 
         <div className="p-6 space-y-6">
