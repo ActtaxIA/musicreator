@@ -43,3 +43,4 @@ WHERE tgname = 'on_auth_user_created';
 -- Si el admin quiere otro rol, lo cambia después en la tabla user_roles.
 
 
+

@@ -33,9 +33,20 @@ interface Props {
   userId?: string;
   userRole?: string;
   onToggleFavorite: (songId: string) => void;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
 }
 
-export default function MusicPlayer({ songs, userId, userRole, onToggleFavorite }: Props) {
+export default function MusicPlayer({ 
+  songs, 
+  userId, 
+  userRole, 
+  onToggleFavorite,
+  onLoadMore,
+  hasMore = false,
+  isLoadingMore = false
+}: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const queueItemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [currentSongIndex, setCurrentSongIndex] = useState(0);
@@ -255,6 +266,19 @@ export default function MusicPlayer({ songs, userId, userRole, onToggleFavorite 
       setShuffleHistory([]);
     }
   }, [isShuffled, queue.length]);
+
+  // ⚡ INFINITE SCROLL: Detectar cuando el usuario llega al final de la lista
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    const scrollPosition = target.scrollTop + target.clientHeight;
+    const threshold = target.scrollHeight - 200; // 200px antes del final
+    
+    // Si llegamos cerca del final y hay más canciones disponibles
+    if (scrollPosition >= threshold && hasMore && onLoadMore && !isLoadingMore) {
+      console.log('📊 Infinite scroll triggered - Loading more songs...');
+      onLoadMore();
+    }
+  }, [hasMore, onLoadMore, isLoadingMore]);
 
   // Función para actualizar duración en BD
   const updateSongDuration = async (songId: string, duration: number) => {
@@ -931,7 +955,10 @@ export default function MusicPlayer({ songs, userId, userRole, onToggleFavorite 
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2">
+            <div 
+              className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2"
+              onScroll={handleScroll}
+            >
               {queue.map((song, index) => {
                 // Extraer BPM
                 const bpmMatch = (song.tags + ' ' + song.prompt).match(/(\d+)\s*bpm/i);
@@ -1021,6 +1048,21 @@ export default function MusicPlayer({ songs, userId, userRole, onToggleFavorite 
                 </div>
                 );
               })}
+
+              {/* Indicador de carga para infinite scroll */}
+              {isLoadingMore && (
+                <div className="flex items-center justify-center py-4">
+                  <div className="w-6 h-6 border-2 border-zinc-300 dark:border-zinc-700 border-t-blue-500 rounded-full animate-spin" />
+                  <span className="ml-3 text-xs text-zinc-600 dark:text-zinc-500">Cargando más canciones...</span>
+                </div>
+              )}
+
+              {/* Mensaje cuando ya no hay más canciones */}
+              {!hasMore && queue.length > 0 && (
+                <div className="text-center py-4 text-xs text-zinc-500 dark:text-zinc-600">
+                  ✅ Todas las canciones cargadas ({queue.length} en total)
+                </div>
+              )}
             </div>
           </div>
         </div>

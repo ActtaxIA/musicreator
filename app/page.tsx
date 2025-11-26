@@ -31,6 +31,8 @@ export default function MainApp() {
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [editingSong, setEditingSong] = useState<Song | null>(null);
   const [regenerateSongData, setRegenerateSongData] = useState<Song | null>(null);
+  const [hasMoreSongs, setHasMoreSongs] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Guardar pestaña activa en localStorage cuando cambia
   useEffect(() => {
@@ -100,13 +102,21 @@ export default function MainApp() {
     if (!user) return;
 
     try {
-      // 1. Cargar canciones (TODAS, para que los suscriptores vean contenido)
+      // ⚡ OPTIMIZACIÓN: Solo cargar las primeras 50 canciones para carga rápida inicial
       const { data: songsData, error: songsError } = await supabase
         .from('songs')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(50);
 
       if (songsError) throw songsError;
+
+      // Si recibimos menos de 50, no hay más canciones
+      if (songsData && songsData.length < 50) {
+        setHasMoreSongs(false);
+      } else {
+        setHasMoreSongs(true);
+      }
 
       // 2. Cargar mis favoritos
       const { data: favsData, error: favsError } = await supabase
@@ -120,6 +130,45 @@ export default function MainApp() {
       setSongs(songsData || []);
     } catch (error) {
       console.error('Error loading songs:', error);
+    }
+  };
+
+  // ⚡ NUEVA FUNCIÓN: Cargar más canciones (infinite scroll)
+  const loadMoreSongs = async () => {
+    if (!user || isLoadingMore || !hasMoreSongs) return;
+    
+    setIsLoadingMore(true);
+    console.log('🔄 Cargando más canciones...');
+    
+    try {
+      // Obtener la fecha de la última canción cargada
+      const lastSong = songs[songs.length - 1];
+      
+      // Cargar las siguientes 20 canciones
+      const { data, error } = await supabase
+        .from('songs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .lt('created_at', lastSong.created_at)
+        .limit(20);
+
+      if (error) throw error;
+      
+      // Si recibimos menos de 20, no hay más canciones
+      if (data.length < 20) {
+        setHasMoreSongs(false);
+        console.log('✅ No hay más canciones para cargar');
+      }
+      
+      // Añadir las nuevas canciones al array existente
+      if (data && data.length > 0) {
+        setSongs(prev => [...prev, ...data]);
+        console.log(`✅ ${data.length} canciones más cargadas (Total: ${songs.length + data.length})`);
+      }
+    } catch (error) {
+      console.error('Error loading more songs:', error);
+    } finally {
+      setIsLoadingMore(false);
     }
   };
 
@@ -390,6 +439,9 @@ export default function MainApp() {
             songs={songsWithFavorites}
             userRole={userProfile?.role}
             onToggleFavorite={handleToggleFavorite}
+            onLoadMore={loadMoreSongs}
+            hasMore={hasMoreSongs}
+            isLoadingMore={isLoadingMore}
           />
         )}
 
