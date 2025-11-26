@@ -11,24 +11,34 @@
 ### 🎨 **Frontend Completo**
 ```
 ✅ Generador visual de música (10+ géneros)
-✅ Biblioteca con reproductor integrado
+✅ Generación múltiple en paralelo (hasta 10 lotes)
+✅ Parámetros avanzados (género vocal, estilo, creatividad, tags negativos)
+✅ Biblioteca con reproductor integrado y paginación infinita
 ✅ Editor con capacidades REALES de Suno:
    - Extend (alargar canciones)
    - Get Stems (separar vocals/instrumental)
    - Concat (unir extensiones)
-✅ Sistema de favoritos
-✅ Búsqueda y filtros
-✅ Login privado
-✅ Panel de administración
+✅ Sistema de favoritos personales por usuario
+✅ Sistema de canales (playlists manuales)
+✅ Búsqueda y filtros avanzados
+✅ Login privado con gestión de sesiones
+✅ Panel de administración completo
+✅ Toggle carátula en móvil (UX optimizada)
 ```
 
-### 🔒 **Sistema de Autenticación**
+### 🔒 **Sistema de Autenticación y Seguridad**
 ```
 ✅ Login obligatorio (Supabase Auth)
 ✅ Sin registro público
-✅ Roles: Admin y Usuario
+✅ Roles: Admin, Editor, Subscriber
+✅ Gestión de sesiones por dispositivo:
+   - Admin: Hasta 3 sesiones simultáneas
+   - Editor/Subscriber: Solo 1 sesión (cierre automático de antiguas)
+✅ Metadata de sesiones: IP, navegador, OS, dispositivo
+✅ UI para gestionar sesiones activas
+✅ Logout global en todos los dispositivos
 ✅ Admin: narciso.pardo@outlook.com
-✅ Panel admin para crear usuarios
+✅ Panel admin para crear usuarios y gestionar roles
 ```
 
 ### 💻 **Dos Formas de Deploy**

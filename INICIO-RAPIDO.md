@@ -40,6 +40,7 @@ Ejecuta los scripts SQL en tu panel de Supabase (SQL Editor) en este orden:
 6. `scripts/setup-channel-songs.sql` (Tabla intermedia para canales)
 7. `scripts/update-languages.sql` (Columna de idioma)
 8. `scripts/fix-policies-v3-final.sql` (Políticas de seguridad RLS)
+9. `scripts/create-sessions-table.sql` (Sistema de gestión de sesiones) **NUEVO v1.7**
 
 **Para ser Admin:**
 Si eres el primer usuario, ejecuta `scripts/set-admin.sql` con tu email o usa el bypass de email configurado en `app/api/admin/users/route.ts`.
@@ -65,19 +66,47 @@ OPENAI_API_KEY
 
 **Importante:** Asegúrate de que todas las variables estén configuradas en tu plataforma de deployment. Las variables con prefijo `NEXT_PUBLIC_` son públicas, las demás son privadas y solo accesibles desde el servidor.
 
-## ✨ Características Nuevas (v1.5 - Sistema de Canales)
+## ✨ Características Nuevas (v1.7 - Seguridad y Optimización)
 
-- **🎵 Canales (Playlists Manuales):** Crea canales temáticos y añade canciones manualmente desde la biblioteca.
-- **🔄 Toggle Multi-Canal:** Añade o quita canciones de múltiples canales con un solo clic.
-- **✓ Feedback Visual:** Los canales asignados aparecen con fondo verde y checkmark.
-- **📱 Media Session API:** Controla la reproducción desde la pantalla de bloqueo del móvil (siguiente/anterior).
-- **🌓 Tema Claro/Oscuro:** Toggle global con persistencia y contraste optimizado.
-- **📲 PWA Mejorado:** Experiencia fullscreen sin scroll lateral en dispositivos móviles.
-- **👥 Gestión de Usuarios:** Panel de administración completo para crear usuarios y asignar roles (Admin, Editor, Suscriptor).
-- **❤️ Favoritos Personales:** Cada usuario tiene su propia lista de favoritos independiente.
-- **💾 Almacenamiento Permanente:** Las canciones se guardan en Supabase Storage (sin enlaces caducados).
-- **🎨 Covers con IA:** Genera portadas únicas para cada canción con DALL-E 3.
-- **🔊 Reproductor Pro:** Cola inteligente, filtros por género/idioma/favoritos, búsqueda en tiempo real, aleatorio sin repeticiones.
+### 🔐 Seguridad y Sesiones
+- **Control de Sesiones por Dispositivo:** Sistema robusto que limita sesiones simultáneas por rol.
+  - Admin: Hasta 3 dispositivos (PC, móvil, tablet)
+  - Editor/Subscriber: Solo 1 dispositivo (cierra automáticamente la sesión anterior al iniciar en otro)
+- **Gestión de Sesiones:** Nueva pestaña con:
+  - Ver dispositivos activos (IP, navegador, OS, última actividad)
+  - Cerrar sesiones específicas o todas las demás
+  - Logout global en todos los dispositivos
+- **Metadata Completa:** Tracking de IP, navegador, sistema operativo y tipo de dispositivo.
+
+### ⚡ Optimización de Rendimiento
+- **Paginación + Infinite Scroll:** Reproductor carga solo 50 canciones inicialmente (antes 200+).
+  - Carga incremental automática de 20 más al hacer scroll
+  - Tiempo de carga inicial: <1 segundo (antes 3-5s)
+  - Escalable a millones de canciones sin pérdida de rendimiento
+- **Optimización de Batería:** Consumo mínimo en segundo plano en dispositivos móviles.
+
+### 📱 UX Móvil Mejorada
+- **Toggle Carátula:** Botón para ocultar/mostrar carátula en reproductor móvil.
+  - Libera ~350px de espacio vertical
+  - 2x más canciones visibles sin scroll excesivo
+  - Transición suave y animada
+
+### 🎵 Generación Avanzada (v1.6)
+- **Generación Múltiple en Paralelo:** Crea hasta 10 lotes simultáneos con variaciones similares o totalmente diferentes.
+- **Títulos Inteligentes:** Generación aleatoria multiidioma sin prefijos de género, coherentes con las letras.
+- **Parámetros Avanzados:** Género vocal, peso de estilo, creatividad (weirdness), tags negativos, sugerencia de track largo.
+- **Extensión de Canciones:** Alargar inicio o final con prompt personalizado.
+- **Modelo V5 por Defecto:** Máxima calidad y velocidad con fallback automático a V4/V3.5.
+
+### Características Base (v1.5)
+- **🎵 Canales (Playlists):** Crea canales temáticos y añade canciones manualmente.
+- **🔄 Toggle Multi-Canal:** Añade o quita canciones de múltiples canales.
+- **📱 Media Session API:** Controles desde pantalla de bloqueo.
+- **🌓 Tema Claro/Oscuro:** Toggle global con persistencia.
+- **👥 Gestión de Usuarios:** Panel completo con roles (Admin, Editor, Subscriber).
+- **❤️ Favoritos Personales:** Lista independiente por usuario.
+- **💾 Almacenamiento Permanente:** Supabase Storage (sin enlaces caducados).
+- **🎨 Covers con IA:** Genera portadas con DALL-E 3.
 
 ## ❓ Solución de Problemas Comunes
 

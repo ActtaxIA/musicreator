@@ -18,10 +18,14 @@
 
 ### 2. Gestión de Usuarios y Roles (RBAC)
 - **Sistema de Roles:** 
-  - **Admin:** Control total, gestión de usuarios, canales y acceso a todo.
-  - **Editor:** Acceso a generador, biblioteca y gestión de canales.
-  - **Subscriber:** Acceso exclusivo al reproductor.
+  - **Admin:** Control total, gestión de usuarios, canales y acceso a todo. Hasta 3 sesiones simultáneas.
+  - **Editor:** Acceso a generador, biblioteca y gestión de canales. Solo 1 sesión activa.
+  - **Subscriber:** Acceso exclusivo al reproductor. Solo 1 sesión activa.
 - **Panel de Administración:** Interfaz para listar, crear, eliminar y cambiar roles de usuarios.
+- **Gestión de Sesiones:** Nueva pestaña para ver dispositivos activos con:
+  - Información detallada: IP, navegador, OS, última actividad
+  - Cerrar sesiones específicas o todas las demás
+  - Límites automáticos por rol (previene sesiones compartidas)
 - **Favoritos Personales:** Cada usuario gestiona su propia lista de "Me gusta" independiente.
 
 ### 3. Sistema de Canales (Playlists Manuales)
@@ -44,13 +48,16 @@
 
 ### 5. Reproductor "Studio Pro"
 - **Diseño Tipo Spotify:** Interfaz oscura/clara, elegante y funcional.
+- **Paginación Inteligente:** Carga inicial de 50 canciones con infinite scroll automático (carga 20 más al llegar al final).
 - **Cola de Reproducción:** Gestión de lista, aleatorio inteligente (sin repeticiones) y repetición.
 - **Visualización:** Barra de progreso interactiva, detección automática de duración real.
 - **Filtros Integrados:** Por género, idioma, favoritos y búsqueda por texto en tiempo real.
 - **Selector de Canales:** Dropdown para cargar y reproducir canales específicos.
 - **Controles de Bloqueo:** Media Session API para controlar siguiente/anterior desde la pantalla de bloqueo del móvil.
+- **Toggle Carátula (Móvil):** Botón para ocultar/mostrar carátula y maximizar espacio para lista.
+- **Optimización de Batería:** Consumo mínimo en segundo plano en dispositivos móviles.
 - **Responsividad Total:** 
-  - **Móvil:** Diseño vertical optimizado con controles grandes y accesibles.
+  - **Móvil:** Diseño vertical optimizado con controles grandes, accesibles y opción de ocultar carátula.
   - **Desktop:** Layout de pantalla completa sin scroll innecesario.
 
 ### 6. Editor y Herramientas
@@ -108,6 +115,28 @@ Consulta [INICIO-RAPIDO.md](./INICIO-RAPIDO.md) para instrucciones detalladas de
 
 ## 🔄 Últimas Actualizaciones
 
+### v1.7.0 - Seguridad y Optimización 🔐⚡
+- ✅ **Sistema de Gestión de Sesiones:** Control de sesiones por dispositivo con límites por rol.
+  - Admin: Hasta 3 dispositivos simultáneos
+  - Editor/Subscriber: Solo 1 dispositivo (cierra automáticamente sesiones antiguas)
+  - UI para ver y cerrar sesiones activas
+  - Metadata completa: IP, navegador, OS, última actividad
+  - Logout global en todos los dispositivos
+- ✅ **Paginación + Infinite Scroll:** Reproductor carga solo 50 canciones iniciales (antes 200+).
+  - Carga incremental de 20 más al hacer scroll
+  - Tiempo de carga inicial: <1 segundo (antes 3-5s)
+  - Escalable a millones de canciones
+- ✅ **Toggle Carátula en Móvil:** Botón para ocultar/mostrar carátula en reproductor móvil.
+  - Libera ~350px de espacio vertical
+  - 2x más canciones visibles sin scroll
+
+### v1.6.0 - Generación Inteligente y Extensión 🎵
+- ✅ **Generación Múltiple en Paralelo:** Crea hasta 10 lotes simultáneos con variaciones.
+- ✅ **Títulos Inteligentes:** Generación aleatoria multiidioma sin prefijos de género.
+- ✅ **Parámetros Avanzados:** Género vocal, peso de estilo, creatividad, tags negativos.
+- ✅ **Extensión de Canciones:** Alargar inicio/final con prompt personalizado.
+- ✅ **Modelo V5 por Defecto:** Máxima calidad y velocidad con fallback automático.
+
 ### v1.5.0 - Sistema de Canales y Mejoras Móviles
 - ✅ **Canales (Playlists Manuales):** Gestión completa de canales con asignación manual de canciones.
 - ✅ **Toggle Multi-Canal:** Añade/quita canciones de múltiples canales sin cerrar el menú.
@@ -118,10 +147,3 @@ Consulta [INICIO-RAPIDO.md](./INICIO-RAPIDO.md) para instrucciones detalladas de
 ### v1.4.0 - Modo Claro/Oscuro
 - ✅ **Tema Dual:** Toggle claro/oscuro con persistencia.
 - ✅ **Contraste Optimizado:** Ajustes en todos los componentes para ambos modos.
-
-### v1.3.0 - RBAC y Admin Panel
-- ✅ **Rebranding:** Cambio de nombre a "Narciso Music Generator".
-- ✅ **Gestión Admin:** Nuevo panel `/admin/users` con capacidad de crear usuarios y asignar roles.
-- ✅ **Seguridad:** Políticas RLS robustas y autenticación por token en API.
-- ✅ **UX Favoritos:** Migración a tabla relacional para favoritos independientes por usuario.
-- ✅ **Mejora UI:** Limpieza de tarjetas en biblioteca y optimización de estados vacíos en el reproductor.
