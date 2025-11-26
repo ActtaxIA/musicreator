@@ -103,17 +103,17 @@ export default function MainApp() {
     if (!user) return;
 
     try {
-      // ⚡ OPTIMIZACIÓN: Solo cargar las primeras 50 canciones para carga rápida inicial
+      // ⚡ OPTIMIZACIÓN: Solo cargar las primeras 30 canciones para carga ultra rápida inicial
       const { data: songsData, error: songsError } = await supabase
         .from('songs')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(30);
 
       if (songsError) throw songsError;
 
-      // Si recibimos menos de 50, no hay más canciones
-      if (songsData && songsData.length < 50) {
+      // Si recibimos menos de 30, no hay más canciones
+      if (songsData && songsData.length < 30) {
         setHasMoreSongs(false);
       } else {
         setHasMoreSongs(true);
