@@ -172,27 +172,79 @@ const MOODS_BY_GENRE: { [key: string]: string[] } = {
   'default': ['energetic', 'relaxed', 'romantic', 'mysterious'], // Para géneros sin mapeo específico
 };
 
-const TEMPO_RANGES: { [key: string]: { min: number; max: number } } = {
-  'techno': { min: 125, max: 135 },
-  'house': { min: 120, max: 130 },
-  'trance': { min: 130, max: 145 },
-  'drum-and-bass': { min: 160, max: 180 },
-  'dubstep': { min: 135, max: 145 },
-  'trap': { min: 130, max: 150 },
-  'hip-hop': { min: 80, max: 110 },
-  'reggae': { min: 60, max: 90 },
-  'salsa': { min: 160, max: 220 },
-  'flamenco': { min: 90, max: 120 },
-  'jazz': { min: 80, max: 160 },
-  'blues': { min: 60, max: 90 },
-  'rock': { min: 110, max: 140 },
-  'metal': { min: 140, max: 180 },
-  'punk': { min: 150, max: 200 },
-  'lo-fi': { min: 70, max: 90 },
-  'ambient': { min: 60, max: 90 },
-  'classical': { min: 60, max: 140 },
-  'pop': { min: 100, max: 130 },
-  'default': { min: 90, max: 130 },
+const TEMPO_RANGES: { [key: string]: { min: number; max: number; typical: number } } = {
+  // Electrónica y Dance
+  'techno': { min: 125, max: 135, typical: 130 },
+  'house': { min: 120, max: 130, typical: 125 },
+  'deep-house': { min: 120, max: 125, typical: 122 },
+  'tech-house': { min: 125, max: 130, typical: 127 },
+  'acid-house': { min: 120, max: 130, typical: 125 },
+  'trance': { min: 130, max: 145, typical: 138 },
+  'edm': { min: 128, max: 132, typical: 130 },
+  'dubstep': { min: 135, max: 145, typical: 140 },
+  'drum-and-bass': { min: 160, max: 180, typical: 174 },
+  'jungle': { min: 155, max: 180, typical: 168 },
+  'breakbeat': { min: 125, max: 140, typical: 135 },
+  'garage': { min: 130, max: 140, typical: 135 },
+  'disco': { min: 110, max: 130, typical: 120 },
+  
+  // Hip Hop y Trap
+  'hip-hop': { min: 80, max: 110, typical: 95 },
+  'boom-bap': { min: 85, max: 100, typical: 93 },
+  'trap': { min: 130, max: 150, typical: 140 },
+  
+  // Urbano Latino
+  'reggaeton': { min: 90, max: 105, typical: 95 },
+  'dancehall': { min: 85, max: 110, typical: 100 },
+  'reggae': { min: 60, max: 90, typical: 75 },
+  'dub': { min: 60, max: 90, typical: 70 },
+  
+  // Latin
+  'salsa': { min: 160, max: 220, typical: 180 },
+  'bachata': { min: 120, max: 140, typical: 130 },
+  'cumbia': { min: 90, max: 110, typical: 100 },
+  'merengue': { min: 120, max: 170, typical: 145 },
+  'flamenco': { min: 90, max: 120, typical: 100 },
+  'latin-pop': { min: 95, max: 130, typical: 110 },
+  
+  // Pop y Rock
+  'pop': { min: 100, max: 130, typical: 120 },
+  'pop-rock': { min: 110, max: 140, typical: 125 },
+  'rock': { min: 110, max: 140, typical: 125 },
+  'indie': { min: 100, max: 140, typical: 120 },
+  'punk': { min: 150, max: 200, typical: 180 },
+  'hard-rock': { min: 120, max: 140, typical: 130 },
+  'grunge': { min: 100, max: 130, typical: 115 },
+  'metal': { min: 140, max: 180, typical: 160 },
+  
+  // Electrónica Chill
+  'ambient': { min: 60, max: 90, typical: 75 },
+  'chillout': { min: 90, max: 120, typical: 100 },
+  'downtempo': { min: 80, max: 100, typical: 90 },
+  'lo-fi': { min: 70, max: 90, typical: 80 },
+  'vaporwave': { min: 60, max: 90, typical: 75 },
+  
+  // Synth y Retro
+  'synthwave': { min: 100, max: 130, typical: 115 },
+  'synth-pop': { min: 110, max: 130, typical: 120 },
+  'new-wave': { min: 110, max: 130, typical: 120 },
+  
+  // Acústicos y Tradicionales
+  'jazz': { min: 80, max: 160, typical: 120 },
+  'blues': { min: 60, max: 90, typical: 75 },
+  'soul': { min: 70, max: 110, typical: 90 },
+  'rnb': { min: 60, max: 90, typical: 75 },
+  'funk': { min: 100, max: 120, typical: 110 },
+  'country': { min: 80, max: 140, typical: 120 },
+  'folk': { min: 90, max: 130, typical: 110 },
+  'classical': { min: 60, max: 140, typical: 100 },
+  'opera': { min: 60, max: 120, typical: 90 },
+  'experimental': { min: 60, max: 180, typical: 100 },
+  
+  // K-Pop
+  'k-pop': { min: 110, max: 140, typical: 125 },
+  
+  'default': { min: 90, max: 130, typical: 110 },
 };
 
 const ENERGY_RANGES: { [key: string]: { min: number; max: number } } = {
@@ -1405,6 +1457,38 @@ export default function MusicGeneratorPro({ userId, onSongGenerated, regenerateF
                   onChange={(e) => setTempo(parseInt(e.target.value))}
                   className="w-full h-2 bg-zinc-300 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
                 />
+                
+                {/* Sugerencia de BPM por Género */}
+                {selectedGenre && TEMPO_RANGES[selectedGenre] && (
+                  <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                    <div className="flex items-start gap-2">
+                      <div className="flex-shrink-0 mt-0.5">
+                        <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-blue-800 dark:text-blue-300">
+                          Sugerencia para {GENRES.find(g => g.value === selectedGenre)?.label}:
+                        </p>
+                        <p className="text-xs text-blue-700 dark:text-blue-400 mt-0.5">
+                          Rango típico: <strong>{TEMPO_RANGES[selectedGenre].min}-{TEMPO_RANGES[selectedGenre].max} BPM</strong>
+                          {' '}• Recomendado: <strong>{TEMPO_RANGES[selectedGenre].typical} BPM</strong>
+                        </p>
+                        {tempo < TEMPO_RANGES[selectedGenre].min && (
+                          <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
+                            <span>⚠️</span> Tu tempo está por debajo del rango típico del género
+                          </p>
+                        )}
+                        {tempo > TEMPO_RANGES[selectedGenre].max && (
+                          <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
+                            <span>⚠️</span> Tu tempo está por encima del rango típico del género
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
