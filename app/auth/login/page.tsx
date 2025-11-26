@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { registerSession } from '@/lib/sessionManager';
 import { Sparkles, Lock, Mail } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -32,6 +33,24 @@ export default function LoginPage() {
       }
 
       console.log('✅ Login exitoso:', data.user?.email);
+      
+      // Obtener rol del usuario
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', data.user.id)
+        .single();
+      
+      const userRole = roleData?.role || 'subscriber';
+      
+      // Registrar sesión en la tabla de sesiones
+      // El trigger de BD cerrará automáticamente sesiones antiguas según el rol
+      const sessionRegistered = await registerSession(data.user.id, userRole);
+      
+      if (sessionRegistered) {
+        const maxSessions = userRole === 'admin' ? 3 : 1;
+        console.log(`🔐 Sesión registrada. Límite: ${maxSessions} dispositivo(s)`);
+      }
       
       // Redirigir a la app
       router.push('/');

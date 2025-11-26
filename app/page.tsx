@@ -8,9 +8,10 @@ import SongLibrary from '@/components/SongLibrary';
 import SongEditor from '@/components/SongEditor';
 import MusicPlayer from '@/components/MusicPlayer';
 import ChannelManager from '@/components/ChannelManager';
+import ActiveSessions from '@/components/ActiveSessions';
 import ThemeToggle from '@/components/ThemeToggle';
 import { Song, UserRole } from '@/types';
-import { Sparkles, Music2, Settings, LogOut, Shield, User, Radio, ListMusic } from 'lucide-react';
+import { Sparkles, Music2, Settings, LogOut, Shield, User, Radio, ListMusic, Laptop } from 'lucide-react';
 
 export default function MainApp() {
   const router = useRouter();
@@ -19,10 +20,10 @@ export default function MainApp() {
   const [isLoading, setIsLoading] = useState(true);
   
   // Recuperar última pestaña activa del localStorage
-  const [activeTab, setActiveTab] = useState<'generator' | 'library' | 'player' | 'editor' | 'channels'>(() => {
+  const [activeTab, setActiveTab] = useState<'generator' | 'library' | 'player' | 'editor' | 'channels' | 'sessions'>(() => {
     if (typeof window !== 'undefined') {
       const savedTab = localStorage.getItem('ondeon-active-tab');
-      return (savedTab as 'generator' | 'library' | 'player' | 'editor' | 'channels') || 'generator';
+      return (savedTab as 'generator' | 'library' | 'player' | 'editor' | 'channels' | 'sessions') || 'generator';
     }
     return 'generator';
   });
@@ -173,8 +174,23 @@ export default function MainApp() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push('/auth/login');
+    try {
+      // Cerrar sesión localmente y globalmente en Supabase
+      await supabase.auth.signOut({ scope: 'global' });
+      
+      // Marcar sesiones como inactivas en la BD
+      if (user) {
+        await supabase
+          .from('user_sessions')
+          .update({ is_active: false })
+          .eq('user_id', user.id);
+      }
+      
+      router.push('/auth/login');
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+      router.push('/auth/login');
+    }
   };
 
   const handleDeleteSong = async (songId: string) => {
@@ -324,6 +340,19 @@ export default function MainApp() {
                 </p>
               </div>
 
+              {/* Sesiones Button */}
+              <button
+                onClick={() => setActiveTab('sessions')}
+                className={`p-2 rounded-md transition-colors border ${
+                  activeTab === 'sessions'
+                    ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-700'
+                    : 'bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white border-zinc-300 dark:border-zinc-700'
+                }`}
+                title="Gestión de Sesiones"
+              >
+                <Laptop className="w-5 h-5" />
+              </button>
+
               {/* Theme Toggle Button */}
               <ThemeToggle />
 
@@ -447,6 +476,10 @@ export default function MainApp() {
 
         {activeTab === 'channels' && (userProfile?.role === 'admin' || userProfile?.role === 'editor') && (
           <ChannelManager userRole={userProfile?.role} />
+        )}
+
+        {activeTab === 'sessions' && user && (
+          <ActiveSessions userId={user.id} userRole={userProfile?.role} />
         )}
       </div>
     </div>
