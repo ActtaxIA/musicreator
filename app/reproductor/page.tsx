@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import MusicPlayer from '@/components/MusicPlayer';
 import ThemeToggle from '@/components/ThemeToggle';
 import { Song } from '@/lib/supabase';
-import { LogOut, User, Radio, Laptop } from 'lucide-react';
+import { LogOut, User, Radio, Laptop, Sparkles, Music2, ListMusic } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ReproductorPage() {
@@ -231,19 +231,9 @@ export default function ReproductorPage() {
             <div className="flex items-center gap-3">
               <Radio className="w-8 h-8 text-blue-600 dark:text-blue-500" />
               <div>
-                <h1 className="text-zinc-900 dark:text-white font-bold text-xl">Reproductor</h1>
-                <p className="text-zinc-600 dark:text-zinc-500 text-xs">Narciso Music Generator</p>
+                <h1 className="text-zinc-900 dark:text-white font-bold text-xl">Narciso Music Generator</h1>
+                <p className="text-zinc-600 dark:text-zinc-500 text-xs">Sistema Interno</p>
               </div>
-            </div>
-
-            {/* Navigation Links */}
-            <div className="flex items-center gap-2">
-              <Link
-                href="/"
-                className="px-4 py-2 rounded-md bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white border border-zinc-300 dark:border-zinc-700 transition-colors text-sm"
-              >
-                Biblioteca
-              </Link>
             </div>
 
             {/* User Info */}
@@ -291,8 +281,45 @@ export default function ReproductorPage() {
         </div>
       </header>
 
-      {/* Reproductor */}
+      {/* Tabs */}
       <div className="container mx-auto px-4 py-6">
+        <div className="flex flex-col md:flex-row gap-2 mb-6">
+          {userProfile?.role !== 'subscriber' && (
+            <>
+              <Link
+                href="/"
+                className="px-6 py-3 rounded-md font-medium transition-all flex items-center justify-center md:justify-start gap-2 border bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 border-zinc-300 dark:border-zinc-700"
+              >
+                <Sparkles className="w-5 h-5" />
+                Generar
+              </Link>
+              <Link
+                href="/"
+                className="px-6 py-3 rounded-md font-medium transition-all flex items-center justify-center md:justify-start gap-2 border bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 border-zinc-300 dark:border-zinc-700"
+              >
+                <Music2 className="w-5 h-5" />
+                Biblioteca
+              </Link>
+              {(userProfile?.role === 'admin' || userProfile?.role === 'editor') && (
+                <Link
+                  href="/"
+                  className="px-6 py-3 rounded-md font-medium transition-all flex items-center justify-center md:justify-start gap-2 border bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 border-zinc-300 dark:border-zinc-700"
+                >
+                  <ListMusic className="w-5 h-5" />
+                  Canales
+                </Link>
+              )}
+            </>
+          )}
+          <button
+            className="px-6 py-3 rounded-md font-medium transition-all flex items-center justify-center md:justify-start gap-2 border bg-blue-600 text-white border-blue-500"
+          >
+            <Radio className="w-5 h-5" />
+            Reproductor
+          </button>
+        </div>
+
+        {/* Reproductor */}
         <MusicPlayer
           songs={songsWithFavorites}
           userId={user?.id}
