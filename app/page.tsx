@@ -10,7 +10,8 @@ import MusicPlayer from '@/components/MusicPlayer';
 import ChannelManager from '@/components/ChannelManager';
 import ActiveSessions from '@/components/ActiveSessions';
 import ThemeToggle from '@/components/ThemeToggle';
-import { Song, UserRole } from '@/types';
+import { UserRole } from '@/types';
+import { Song } from '@/lib/supabase';
 import { Sparkles, Music2, Settings, LogOut, Shield, User, Radio, ListMusic, Laptop } from 'lucide-react';
 
 export default function MainApp() {
@@ -28,8 +29,7 @@ export default function MainApp() {
     return 'generator';
   });
   
-  const [songs, setSongs] = useState<Song[]>([]); // Solo para REPRODUCTOR (30 iniciales + infinite scroll)
-  const [allSongsForLibrary, setAllSongsForLibrary] = useState<Song[]>([]); // TODAS para BIBLIOTECA
+  const [songs, setSongs] = useState<Song[]>([]); // Canciones cargadas (30 para reproductor, todas para biblioteca)
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [editingSong, setEditingSong] = useState<Song | null>(null);
   const [regenerateSongData, setRegenerateSongData] = useState<Song | null>(null);
@@ -55,6 +55,13 @@ export default function MainApp() {
       loadSongs();
     }
   }, [user]);
+
+  // 📚 Cargar TODAS las canciones cuando se activa la pestaña de biblioteca
+  useEffect(() => {
+    if (user && activeTab === 'library') {
+      loadAllSongs();
+    }
+  }, [user, activeTab]);
 
   const checkAuth = async () => {
     try {
@@ -150,6 +157,52 @@ export default function MainApp() {
     }
   };
 
+  // 📚 FUNCIÓN ESPECÍFICA PARA BIBLIOTECA: Cargar TODAS las canciones
+  const loadAllSongs = async () => {
+    if (!user) return;
+
+    try {
+      // 1. Obtener el conteo TOTAL real (para mostrar en la UI)
+      const { count: totalCount, error: countError } = await supabase
+        .from('songs')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if (countError) {
+        console.error('Error counting songs:', countError);
+      } else {
+        setTotalSongsCount(totalCount || 0);
+      }
+
+      // 2. Cargar TODAS las canciones (SIN LIMIT para la biblioteca)
+      const { data: songsData, error: songsError } = await supabase
+        .from('songs')
+        .select('*')
+        .eq('user_id', user.id) // Asegurar filtro por usuario
+        .order('created_at', { ascending: false });
+
+      if (songsError) throw songsError;
+
+      // No hay más canciones porque ya cargamos todas
+      setHasMoreSongs(false);
+
+      // 3. Cargar mis favoritos
+      const { data: favsData, error: favsError } = await supabase
+        .from('user_favorites')
+        .select('song_id')
+        .eq('user_id', user.id);
+
+      if (favsError) throw favsError;
+
+      setFavoriteIds(new Set(favsData?.map(f => f.song_id) || []));
+      setSongs(songsData || []);
+      
+      console.log(`✅ Biblioteca: ${songsData?.length || 0} canciones cargadas (todas)`);
+    } catch (error) {
+      console.error('Error loading all songs:', error);
+    }
+  };
+
   // ⚡ NUEVA FUNCIÓN: Cargar más canciones (infinite scroll)
   const loadMoreSongs = async () => {
     if (!user || isLoadingMore || !hasMoreSongs) return;
@@ -219,7 +272,9 @@ export default function MainApp() {
       if (error) throw error;
 
       // Actualizar lista local
-      setSongs(songs.filter(s => s.id !== songId));
+      setSongs(prev => prev.filter(s => s.id !== songId));
+      // Actualizar contador total
+      setTotalSongsCount(prev => Math.max(0, prev - 1));
     } catch (error) {
       console.error('Error deleting song:', error);
       alert('Error al eliminar la canción');
@@ -271,7 +326,7 @@ export default function MainApp() {
       if (error) throw error;
 
       // Actualizar lista local
-      setSongs(songs.map(s => 
+      setSongs(prev => prev.map(s => 
         s.id === songId ? { ...s, play_count: (s.play_count || 0) + 1 } : s
       ));
     } catch (error) {
@@ -296,7 +351,7 @@ export default function MainApp() {
     setActiveTab('library');
   };
 
-  const handleSongUpdate = (songId: string, updates: any) => {
+  const handleSongUpdate = (songId: string, updates: Partial<Song>) => {
     setSongs(prev =>
       prev.map(song =>
         song.id === songId ? { ...song, ...updates } : song
@@ -421,7 +476,7 @@ export default function MainApp() {
                 }`}
               >
                 <Music2 className="w-5 h-5" />
-                Biblioteca ({songs.length})
+                Biblioteca ({totalSongsCount > 0 ? totalSongsCount : songs.length})
               </button>
               {(userProfile?.role === 'admin' || userProfile?.role === 'editor') && (
                 <button
@@ -457,12 +512,11 @@ export default function MainApp() {
             userId={user?.id}
             regenerateFromSong={regenerateSongData}
             onSongGenerated={() => {
-              // Recargar biblioteca cuando se genera una canción
+              // Recargar canciones cuando se genera una canción
+              // El useEffect se encargará de cargar todas si estamos en biblioteca
               loadSongs();
               // Limpiar datos de regeneración
               setRegenerateSongData(null);
-              // Opcional: cambiar a pestaña biblioteca
-              // setActiveTab('library');
             }}
           />
         )}
