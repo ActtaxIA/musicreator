@@ -28,12 +28,14 @@ export default function MainApp() {
     return 'generator';
   });
   
-  const [songs, setSongs] = useState<Song[]>([]);
+  const [songs, setSongs] = useState<Song[]>([]); // Solo para REPRODUCTOR (30 iniciales + infinite scroll)
+  const [allSongsForLibrary, setAllSongsForLibrary] = useState<Song[]>([]); // TODAS para BIBLIOTECA
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [editingSong, setEditingSong] = useState<Song | null>(null);
   const [regenerateSongData, setRegenerateSongData] = useState<Song | null>(null);
   const [hasMoreSongs, setHasMoreSongs] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [totalSongsCount, setTotalSongsCount] = useState<number>(0);
 
   // Guardar pestaña activa en localStorage cuando cambia
   useEffect(() => {
@@ -103,10 +105,24 @@ export default function MainApp() {
     if (!user) return;
 
     try {
+      // 1. Obtener el conteo TOTAL real (para mostrar en la UI)
+      const { count: totalCount, error: countError } = await supabase
+        .from('songs')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if (countError) {
+        console.error('Error counting songs:', countError);
+      } else {
+        setTotalSongsCount(totalCount || 0);
+      }
+
+      // 2. Cargar las primeras 30 canciones
       // ⚡ OPTIMIZACIÓN: Solo cargar las primeras 30 canciones para carga ultra rápida inicial
       const { data: songsData, error: songsError } = await supabase
         .from('songs')
         .select('*')
+        .eq('user_id', user.id) // Asegurar filtro por usuario
         .order('created_at', { ascending: false })
         .limit(30);
 
@@ -119,7 +135,7 @@ export default function MainApp() {
         setHasMoreSongs(true);
       }
 
-      // 2. Cargar mis favoritos
+      // 3. Cargar mis favoritos
       const { data: favsData, error: favsError } = await supabase
         .from('user_favorites')
         .select('song_id')
@@ -460,6 +476,7 @@ export default function MainApp() {
             onRegenerate={handleRegenerateSong}
             onUpdatePlayCount={handleUpdatePlayCount}
             onEdit={handleOpenEditor}
+            totalSongsCount={totalSongsCount}
           />
         )}
 
@@ -471,6 +488,7 @@ export default function MainApp() {
             onLoadMore={loadMoreSongs}
             hasMore={hasMoreSongs}
             isLoadingMore={isLoadingMore}
+            totalSongsCount={totalSongsCount}
           />
         )}
 
