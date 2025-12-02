@@ -36,6 +36,7 @@ interface Props {
   onLoadMore?: () => void;
   hasMore?: boolean;
   isLoadingMore?: boolean;
+  totalSongsCount?: number;
 }
 
 export default function MusicPlayer({ 
@@ -45,7 +46,8 @@ export default function MusicPlayer({
   onToggleFavorite,
   onLoadMore,
   hasMore = false,
-  isLoadingMore = false
+  isLoadingMore = false,
+  totalSongsCount
 }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const queueItemRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -65,6 +67,7 @@ export default function MusicPlayer({
   const [channels, setChannels] = useState<Channel[]>([]);
   const [activeChannelId, setActiveChannelId] = useState<string | null>(null);
   const [showArtwork, setShowArtwork] = useState(true);
+  const [displayedSongsCount, setDisplayedSongsCount] = useState(30); // Cuántas canciones mostrar en la lista
 
   // Cargar canales al montar
   useEffect(() => {
@@ -189,6 +192,8 @@ export default function MusicPlayer({
       const currentSongId = queue[currentSongIndex]?.id;
       
       setQueue(filteredSongs);
+      // Resetear contador de canciones mostradas cuando cambian los filtros
+      setDisplayedSongsCount(30);
       
       // Intentar mantener la canción actual en la nueva lista filtrada
       if (currentSongId) {
@@ -209,6 +214,7 @@ export default function MusicPlayer({
         // Si el filtro no deja resultados, vaciar cola visual pero mantener audio si suena?
         // Mejor dejarlo vacío
         setQueue([]);
+        setDisplayedSongsCount(30);
     }
   }, [selectedGenre, selectedLanguage, searchQuery, showFavoritesOnly]);
 
@@ -229,26 +235,40 @@ export default function MusicPlayer({
     const audio = audioRef.current;
     if (!audio || !currentSong) return;
 
-    // Resetear estados
-    setCurrentTime(0);
-    setDuration(0);
+    // Si la URL ya es la correcta y está sonando (por el play directo), no interrumpir
+    const isSameUrl = audio.src === currentSong.audio_url || audio.src.endsWith(currentSong.audio_url || '');
+    if (isSameUrl && !audio.paused) {
+      console.log('✅ Audio already playing correct song, skipping effect reload');
+      return;
+    }
 
-    // Cargar nueva canción
-    audio.src = currentSong.audio_url || '';
-    audio.volume = isMuted ? 0 : volume;
-    audio.load();
+    // Resetear estados si cambió la canción
+    if (!isSameUrl) {
+      setCurrentTime(0);
+      setDuration(0);
+      // Cargar nueva canción
+      audio.src = currentSong.audio_url || '';
+      audio.volume = isMuted ? 0 : volume;
+      audio.load();
+    }
 
-    // Reproducir automáticamente si estaba sonando
+    // Reproducir automáticamente si estaba sonando o si se activó isPlaying
     if (isPlaying) {
       const playPromise = audio.play();
       if (playPromise !== undefined) {
         playPromise.catch(err => {
-          console.error('Error playing:', err);
-          setIsPlaying(false);
+          console.error('Error playing in effect:', err);
+          // Si falla el autoplay, intentar recuperar el estado
+          if (err.name === 'NotAllowedError') {
+             console.warn('⚠️ Autoplay blocked. User interaction needed.');
+             setIsPlaying(false);
+          } else {
+             setIsPlaying(false);
+          }
         });
       }
     }
-  }, [currentSong?.id, currentSong?.audio_url]); // Solo cuando cambia la ID o URL de la canción actual
+  }, [currentSong?.id, currentSong?.audio_url, isPlaying]); // Añadido isPlaying para reaccionar a cambios de estado
 
   // Actualizar volumen
   useEffect(() => {
@@ -268,18 +288,18 @@ export default function MusicPlayer({
     }
   }, [isShuffled, queue.length]);
 
-  // ⚡ INFINITE SCROLL: Detectar cuando el usuario llega al final de la lista
+  // ⚡ INFINITE SCROLL: Mostrar más canciones cuando el usuario llega al final de la lista visible
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
     const scrollPosition = target.scrollTop + target.clientHeight;
     const threshold = target.scrollHeight - 200; // 200px antes del final
     
-    // Si llegamos cerca del final y hay más canciones disponibles
-    if (scrollPosition >= threshold && hasMore && onLoadMore && !isLoadingMore) {
-      console.log('📊 Infinite scroll triggered - Loading more songs...');
-      onLoadMore();
+    // Si llegamos cerca del final y hay más canciones para mostrar
+    if (scrollPosition >= threshold && displayedSongsCount < queue.length) {
+      console.log('📊 Infinite scroll triggered - Mostrando más canciones...');
+      setDisplayedSongsCount(prev => Math.min(prev + 30, queue.length));
     }
-  }, [hasMore, onLoadMore, isLoadingMore]);
+  }, [displayedSongsCount, queue.length]);
 
   // Función para actualizar duración en BD
   const updateSongDuration = async (songId: string, duration: number) => {
@@ -578,10 +598,80 @@ export default function MusicPlayer({
     if (index === currentSongIndex && isPlaying) {
       // Si es la misma canción y está sonando, pausar
       setIsPlaying(false);
+      if (audioRef.current) audioRef.current.pause();
     } else {
       // Cambiar a la canción seleccionada y reproducir
-      setCurrentSongIndex(index);
-      setIsPlaying(true);
+      const song = queue[index];
+      if (song && audioRef.current) {
+        // ⚡ CRÍTICO PARA MÓVIL: Cargar y reproducir DIRECTAMENTE en el evento de click
+        // Esto asegura que el navegador no bloquee el audio por falta de interacción de usuario
+        try {
+          console.log('🎵 Play triggered for:', song.title);
+          
+          // Primero actualizar el índice y estado
+          setCurrentSongIndex(index);
+          setIsPlaying(true);
+          
+          // Luego cargar y reproducir el audio
+          const audio = audioRef.current;
+          const audioUrl = song.audio_url || '';
+          
+          // Si es la misma URL, solo reproducir
+          if (audio.src === audioUrl || audio.src.endsWith(audioUrl)) {
+            audio.currentTime = 0;
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+              playPromise.catch(err => {
+                console.warn('⚠️ Direct play failed:', err);
+                setIsPlaying(false);
+              });
+            }
+          } else {
+            // Nueva URL: cargar primero, luego reproducir cuando esté listo
+            audio.src = audioUrl;
+            audio.currentTime = 0;
+            audio.load();
+            
+            // Esperar a que el audio esté listo antes de reproducir
+            const handleCanPlay = () => {
+              const playPromise = audio.play();
+              if (playPromise !== undefined) {
+                playPromise
+                  .then(() => {
+                    console.log('✅ Audio playing successfully');
+                  })
+                  .catch(err => {
+                    console.warn('⚠️ Play failed after load:', err);
+                    setIsPlaying(false);
+                  });
+              }
+              audio.removeEventListener('canplay', handleCanPlay);
+            };
+            
+            audio.addEventListener('canplay', handleCanPlay);
+            
+            // Fallback: intentar reproducir después de un pequeño delay si canplay no se dispara
+            setTimeout(() => {
+              if (audio.readyState >= 2) { // HAVE_CURRENT_DATA o superior
+                const playPromise = audio.play();
+                if (playPromise !== undefined) {
+                  playPromise.catch(err => {
+                    console.warn('⚠️ Delayed play failed:', err);
+                    setIsPlaying(false);
+                  });
+                }
+              }
+            }, 100);
+          }
+        } catch (e) {
+          console.error('❌ Error in direct play:', e);
+          setIsPlaying(false);
+        }
+      } else {
+        // Si no hay audioRef, solo actualizar el índice y el estado
+        setCurrentSongIndex(index);
+        setIsPlaying(true);
+      }
     }
   };
 
@@ -619,8 +709,8 @@ export default function MusicPlayer({
           valueB = (b.genre || '').toLowerCase();
           break;
         case 'bpm':
-          const bpmA = (a.tags + ' ' + a.prompt).match(/(\d+)\s*bpm/i);
-          const bpmB = (b.tags + ' ' + b.prompt).match(/(\d+)\s*bpm/i);
+          const bpmA = (a.prompt || '').match(/(\d+)\s*bpm/i);
+          const bpmB = (b.prompt || '').match(/(\d+)\s*bpm/i);
           valueA = bpmA ? parseInt(bpmA[1]) : 0;
           valueB = bpmB ? parseInt(bpmB[1]) : 0;
           break;
@@ -862,19 +952,6 @@ export default function MusicPlayer({
                     {channel.name}
                   </button>
                   
-                  {/* Botón de eliminar (Admin/Editor) */}
-                  {(userRole === 'admin' || userRole === 'editor') && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteChannel(channel.id);
-                      }}
-                      className="absolute -top-1.5 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover/channel:opacity-100 transition-opacity shadow-sm hover:bg-red-600 hover:scale-110 z-10"
-                      title="Eliminar canal"
-                    >
-                      <X className="w-2 h-2" />
-                    </button>
-                  )}
                 </div>
               ))}
             </div>
@@ -884,7 +961,7 @@ export default function MusicPlayer({
           <div className="bg-white dark:bg-[#18181b] rounded-xl p-3 border border-zinc-300 dark:border-white/5 flex flex-col md:flex-row items-start md:items-center justify-between shadow-lg shrink-0 gap-3 transition-colors duration-200">
             <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-500 text-xs font-bold uppercase tracking-widest pl-2 flex-1 min-w-0 w-full md:w-auto">
               <List className="w-4 h-4 flex-shrink-0" />
-              <span className="whitespace-nowrap mr-2">Library ({queue.length})</span>
+              <span className="whitespace-nowrap mr-2">Library ({totalSongsCount !== undefined ? totalSongsCount : queue.length})</span>
               
               {/* Búsqueda */}
               <div className="relative flex-1 w-full md:max-w-[200px]">
@@ -978,9 +1055,9 @@ export default function MusicPlayer({
               className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2"
               onScroll={handleScroll}
             >
-              {queue.map((song, index) => {
+              {queue.slice(0, displayedSongsCount).map((song, index) => {
                 // Extraer BPM
-                const bpmMatch = (song.tags + ' ' + song.prompt).match(/(\d+)\s*bpm/i);
+                const bpmMatch = (song.prompt || '').match(/(\d+)\s*bpm/i);
                 const bpm = bpmMatch ? bpmMatch[1] : '-';
 
                 return (
@@ -1062,24 +1139,28 @@ export default function MusicPlayer({
 
                   {/* Duración */}
                   <div className="text-right text-[10px] font-mono text-zinc-500 dark:text-zinc-500 pointer-events-none">
-                    {formatTime(song.duration)}
+                    {formatTime(song.duration || 0)}
                   </div>
                 </div>
                 );
               })}
 
-              {/* Indicador de carga para infinite scroll */}
-              {isLoadingMore && (
+              {/* Botón para mostrar más canciones */}
+              {displayedSongsCount < queue.length && (
                 <div className="flex items-center justify-center py-4">
-                  <div className="w-6 h-6 border-2 border-zinc-300 dark:border-zinc-700 border-t-blue-500 rounded-full animate-spin" />
-                  <span className="ml-3 text-xs text-zinc-600 dark:text-zinc-500">Cargando más canciones...</span>
+                  <button
+                    onClick={() => setDisplayedSongsCount(prev => Math.min(prev + 30, queue.length))}
+                    className="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium transition-colors"
+                  >
+                    Mostrar más ({displayedSongsCount} de {queue.length})
+                  </button>
                 </div>
               )}
 
-              {/* Mensaje cuando ya no hay más canciones */}
-              {!hasMore && queue.length > 0 && (
+              {/* Mensaje cuando se muestran todas las canciones */}
+              {displayedSongsCount >= queue.length && queue.length > 0 && (
                 <div className="text-center py-4 text-xs text-zinc-500 dark:text-zinc-600">
-                  ✅ Todas las canciones cargadas ({queue.length} en total)
+                  ✅ Mostrando todas las canciones ({queue.length} en total)
                 </div>
               )}
             </div>

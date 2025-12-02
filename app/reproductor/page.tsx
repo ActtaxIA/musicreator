@@ -15,10 +15,8 @@ export default function ReproductorPage() {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   
-  const [songs, setSongs] = useState<Song[]>([]); // Solo 30 iniciales + infinite scroll
+  const [songs, setSongs] = useState<Song[]>([]); // TODAS las canciones cargadas (para buscar/filtrar)
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
-  const [hasMoreSongs, setHasMoreSongs] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [totalSongsCount, setTotalSongsCount] = useState<number>(0);
 
   // Check auth al montar
@@ -64,7 +62,7 @@ export default function ReproductorPage() {
     }
   };
 
-  // ⚡ Cargar solo las primeras 30 canciones (optimización para reproductor)
+  // 📚 Cargar TODAS las canciones (para poder buscar/filtrar sobre el total)
   const loadSongs = async () => {
     if (!user) return;
 
@@ -81,23 +79,15 @@ export default function ReproductorPage() {
         setTotalSongsCount(totalCount || 0);
       }
 
-      // 2. Cargar las primeras 30 canciones
-      // ⚡ OPTIMIZACIÓN: Solo cargar las primeras 30 canciones para carga ultra rápida inicial
+      // 2. Cargar TODAS las canciones (sin límite)
+      // Esto permite buscar y filtrar sobre el total
       const { data: songsData, error: songsError } = await supabase
         .from('songs')
         .select('*')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(30);
+        .order('created_at', { ascending: false });
 
       if (songsError) throw songsError;
-
-      // Si recibimos menos de 30, no hay más canciones
-      if (songsData && songsData.length < 30) {
-        setHasMoreSongs(false);
-      } else {
-        setHasMoreSongs(true);
-      }
 
       // 3. Cargar mis favoritos
       const { data: favsData, error: favsError } = await supabase
@@ -109,48 +99,10 @@ export default function ReproductorPage() {
 
       setFavoriteIds(new Set(favsData?.map(f => f.song_id) || []));
       setSongs(songsData || []);
+      
+      console.log(`✅ Reproductor: ${songsData?.length || 0} canciones cargadas (todas para búsqueda/filtros)`);
     } catch (error) {
       console.error('Error loading songs:', error);
-    }
-  };
-
-  // ⚡ Cargar más canciones (infinite scroll)
-  const loadMoreSongs = async () => {
-    if (!user || isLoadingMore || !hasMoreSongs) return;
-    
-    setIsLoadingMore(true);
-    console.log('🔄 Cargando más canciones...');
-    
-    try {
-      // Obtener la fecha de la última canción cargada
-      const lastSong = songs[songs.length - 1];
-      
-      // Cargar las siguientes 20 canciones
-      const { data, error } = await supabase
-        .from('songs')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .lt('created_at', lastSong.created_at)
-        .limit(20);
-
-      if (error) throw error;
-      
-      // Si recibimos menos de 20, no hay más canciones
-      if (data.length < 20) {
-        setHasMoreSongs(false);
-        console.log('✅ No hay más canciones para cargar');
-      }
-      
-      // Añadir las nuevas canciones al array existente
-      if (data && data.length > 0) {
-        setSongs(prev => [...prev, ...data]);
-        console.log(`✅ ${data.length} canciones más cargadas (Total: ${songs.length + data.length})`);
-      }
-    } catch (error) {
-      console.error('Error loading more songs:', error);
-    } finally {
-      setIsLoadingMore(false);
     }
   };
 
@@ -325,9 +277,6 @@ export default function ReproductorPage() {
           userId={user?.id}
           userRole={userProfile?.role}
           onToggleFavorite={handleToggleFavorite}
-          onLoadMore={loadMoreSongs}
-          hasMore={hasMoreSongs}
-          isLoadingMore={isLoadingMore}
           totalSongsCount={totalSongsCount}
         />
       </div>
