@@ -24,12 +24,13 @@ export default function ReproductorPage() {
     checkAuth();
   }, []);
 
-  // Cargar canciones cuando hay usuario autenticado
+  // Cargar canciones cuando hay usuario autenticado Y perfil cargado
+  // (necesitamos el perfil para saber si es admin/editor)
   useEffect(() => {
-    if (user) {
+    if (user && userProfile) {
       loadSongs();
     }
-  }, [user]);
+  }, [user, userProfile]);
 
   const checkAuth = async () => {
     try {
@@ -63,15 +64,25 @@ export default function ReproductorPage() {
   };
 
   // 📚 Cargar TODAS las canciones (para poder buscar/filtrar sobre el total)
+  // Admin y Editor ven TODAS las canciones, usuarios normales solo las suyas
   const loadSongs = async () => {
     if (!user) return;
 
     try {
+      // Determinar si el usuario es admin o editor (pueden ver todas las canciones)
+      const isStaff = userProfile?.role === 'admin' || userProfile?.role === 'editor';
+
       // 1. Obtener el conteo TOTAL real (para mostrar en la UI)
-      const { count: totalCount, error: countError } = await supabase
+      let countQuery = supabase
         .from('songs')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id);
+        .select('*', { count: 'exact', head: true });
+      
+      // Solo filtrar por user_id si NO es admin/editor
+      if (!isStaff) {
+        countQuery = countQuery.eq('user_id', user.id);
+      }
+
+      const { count: totalCount, error: countError } = await countQuery;
 
       if (countError) {
         console.error('Error counting songs:', countError);
@@ -79,13 +90,18 @@ export default function ReproductorPage() {
         setTotalSongsCount(totalCount || 0);
       }
 
-      // 2. Cargar TODAS las canciones (sin límite)
-      // Esto permite buscar y filtrar sobre el total
-      const { data: songsData, error: songsError } = await supabase
+      // 2. Cargar canciones (admin/editor ven todas, otros solo las suyas)
+      let songsQuery = supabase
         .from('songs')
         .select('*')
-        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
+      
+      // Solo filtrar por user_id si NO es admin/editor
+      if (!isStaff) {
+        songsQuery = songsQuery.eq('user_id', user.id);
+      }
+
+      const { data: songsData, error: songsError } = await songsQuery;
 
       if (songsError) throw songsError;
 
@@ -100,7 +116,7 @@ export default function ReproductorPage() {
       setFavoriteIds(new Set(favsData?.map(f => f.song_id) || []));
       setSongs(songsData || []);
       
-      console.log(`✅ Reproductor: ${songsData?.length || 0} canciones cargadas (todas para búsqueda/filtros)`);
+      console.log(`✅ Reproductor: ${songsData?.length || 0} canciones cargadas ${isStaff ? '(todas - admin/editor)' : '(propias)'}`);
     } catch (error) {
       console.error('Error loading songs:', error);
     }

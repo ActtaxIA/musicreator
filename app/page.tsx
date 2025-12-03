@@ -50,12 +50,13 @@ export default function MainApp() {
     checkAuth();
   }, []);
 
-  // Cargar TODAS las canciones cuando hay usuario autenticado (solo para biblioteca)
+  // Cargar TODAS las canciones cuando hay usuario autenticado Y perfil cargado
+  // (necesitamos el perfil para saber si es admin/editor)
   useEffect(() => {
-    if (user) {
+    if (user && userProfile) {
       loadAllSongs();
     }
-  }, [user]);
+  }, [user, userProfile]);
 
   const checkAuth = async () => {
     try {
@@ -98,15 +99,25 @@ export default function MainApp() {
 
 
   // 📚 FUNCIÓN PARA BIBLIOTECA: Cargar TODAS las canciones
+  // Admin y Editor ven TODAS las canciones, usuarios normales solo las suyas
   const loadAllSongs = async () => {
     if (!user) return;
 
     try {
+      // Determinar si el usuario es admin o editor (pueden ver todas las canciones)
+      const isStaff = userProfile?.role === 'admin' || userProfile?.role === 'editor';
+
       // 1. Obtener el conteo TOTAL real (para mostrar en la UI)
-      const { count: totalCount, error: countError } = await supabase
+      let countQuery = supabase
         .from('songs')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id);
+        .select('*', { count: 'exact', head: true });
+      
+      // Solo filtrar por user_id si NO es admin/editor
+      if (!isStaff) {
+        countQuery = countQuery.eq('user_id', user.id);
+      }
+
+      const { count: totalCount, error: countError } = await countQuery;
 
       if (countError) {
         console.error('Error counting songs:', countError);
@@ -114,12 +125,18 @@ export default function MainApp() {
         setTotalSongsCount(totalCount || 0);
       }
 
-      // 2. Cargar TODAS las canciones (SIN LIMIT para la biblioteca)
-      const { data: songsData, error: songsError } = await supabase
+      // 2. Cargar canciones (admin/editor ven todas, otros solo las suyas)
+      let songsQuery = supabase
         .from('songs')
         .select('*')
-        .eq('user_id', user.id) // Asegurar filtro por usuario
         .order('created_at', { ascending: false });
+      
+      // Solo filtrar por user_id si NO es admin/editor
+      if (!isStaff) {
+        songsQuery = songsQuery.eq('user_id', user.id);
+      }
+
+      const { data: songsData, error: songsError } = await songsQuery;
 
       if (songsError) throw songsError;
 
@@ -134,7 +151,7 @@ export default function MainApp() {
       setFavoriteIds(new Set(favsData?.map(f => f.song_id) || []));
       setSongs(songsData || []);
       
-      console.log(`✅ Biblioteca: ${songsData?.length || 0} canciones cargadas (todas)`);
+      console.log(`✅ Biblioteca: ${songsData?.length || 0} canciones cargadas ${isStaff ? '(todas - admin/editor)' : '(propias)'}`);
     } catch (error) {
       console.error('Error loading all songs:', error);
     }
